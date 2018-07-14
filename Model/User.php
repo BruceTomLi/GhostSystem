@@ -329,5 +329,16 @@
 				return null;
 			}
 		}
+		
+		/**
+		 * 下面的函数通过问题号加载相应的评论
+		 */
+		function getCommentsForQuestion($questionId){
+			global $pdo;
+			$paraArr=array(":questionId"=>$questionId);
+			$sql="select * from tb_comment where questionId=:questionId";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
+		}
 	}
 ?>

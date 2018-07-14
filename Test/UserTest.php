@@ -219,6 +219,15 @@
 		}
 		
 		/**
+		 * 下面测试通过问题号加载用户对该问题的评论
+		 */
+		function testGetCommentsForQuestion(){
+			$questionId="5b45c856e9c0f6.75638452";
+			$result=$this->user->getCommentsForQuestion($questionId);
+			$this->assertTrue(!empty($result));
+		}
+		
+		/**
 		 * 下面演示sql注入
 		 */
 		/*function testSqlInject(){

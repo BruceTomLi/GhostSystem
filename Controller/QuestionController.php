@@ -60,9 +60,25 @@
 		 */
 		public function getQuestionDetails(){
 			$questionId=$_REQUEST['questionId'];
-			$result=json_encode($this->questionManager->getQuestionDetails($questionId));
+			//需要获取问题详情，以及问题相关的评论
+			$questionDetails=$this->questionManager->getQuestionDetails($questionId);
+			$questionComments=$this->user->getCommentsForQuestion($questionId);
+			$commentCount=count($questionComments);
+			$resultArr=array("questionDetails"=>$questionDetails,"questionComments"=>$questionComments,"commentCount"=>$commentCount);
+			$result=json_encode($resultArr);
 			return $result;
 		}
+		
+		/**
+		 * 下面的方法用来让用户提交一个问题
+		 */
+		public function commentQuestion(){
+			$questionId=$_REQUEST['questionId'];
+			$content=$_REQUEST['content'];
+			$result=json_encode($this->user->commentQuestion($questionId, $content));
+			return $result;
+		}
+		
 		
 		public function selectAction(){
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){
@@ -88,6 +104,9 @@
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getQuestionDetails"){
 				return $this->getQuestionDetails();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="commentQuestion"){
+				return $this->commentQuestion();
 			}
 			return "没有发送合适的请求";
 		}

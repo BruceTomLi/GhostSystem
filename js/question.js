@@ -33,6 +33,19 @@ function cancelAddComment(){
 function commentQuestion(){
 	var questionId=$("#addCommentBtn").attr("value");
 	var content=$(".addCommentDiv textarea").val();
+	$.post(
+		"../Controller/QuestionController.php",
+		{action:"commentQuestion",questionId:questionId,content:content},
+		function(data){
+			var result=$.trim(data);
+			if(result==1){
+				alert("评论成功");
+			}
+			else{
+				alert("评论失败");
+			}
+		}
+	);
 	
 }
 
@@ -70,16 +83,28 @@ function getQuestionDetails(obj){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
 			var questionList="";			
-			result.forEach(function(value,index){
+			result.questionDetails.forEach(function(value,index){
 				questionList+="<h4>"+value.content+"</h4><hr>";
 				questionList+="<p><span>描述：</span>"+value.questionDescription+"</p>";
 				questionList+="<p><span>时间：</span><span>"+value.askDate+"</span></p>";
-				questionList+="<p><button class='btn-link' id='addCommentBtn' onClick='addComment()'>添加评论</button></p>";
+				questionList+="<p><button class='btn-link' id='addCommentBtn' onClick='addComment()' value='"+value.questionId+"'>添加评论</button></p>";
 			});
 			$("#questionDetails").html(questionList);
+			
+			var questionAnswers="<h4>"+result.commentCount+"个回复</h4>";
+			questionAnswers+="<hr><ul>";
+			result.questionComments.forEach(function(value,index){
+				questionAnswers+="<li><ul><li>";
+				questionAnswers+="<span>"+value.commenter+"：</span>";
+				questionAnswers+="<span>"+value.content+"</span>";
+				questionAnswers+="<button class='btn-link replyBtn'>回复</button>";
+				questionAnswers+="</li></ul></li>";
+			});
+			questionAnswers+="</ul>";
+			$("#questionAnswers").html(questionAnswers);
+			
 			$(".queryDiv").hide();
 			$(".detailsDiv").show();
 		}
 	);	
 }
-

@@ -45,11 +45,11 @@
 }
 /*下面的样式用于修饰用户的评论*/
 
-.questionAnswers ul{
+#questionAnswers ul{
 	list-style: none;
 }
 
-.questionAnswers>ul>li{
+#questionAnswers>ul>li{
 	border-bottom: 1px #CCCCCC solid;
 	padding-top: 10px;
 	padding-bottom: 10px;
@@ -59,7 +59,7 @@
 	display: none;
 }
 
-.questionAnswers button{
+#questionAnswers button{
 	margin-right: 5px;
 }
 

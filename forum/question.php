@@ -168,7 +168,7 @@
 								<button class="btn btn-warning" id="cancelAddComment">取消</button>
 							</div>
 						</section>	
-						<section class="questionAnswers">
+						<section id="questionAnswers">
 							<h4>2个回复</h4>
 							<hr>
 							<ul>
