@@ -222,12 +222,10 @@
 		 * 下面是用户注册时根据省份获取城市的功能
 		 */
 		function getCityList($province){
-			$cityOptions = '';
-			$cityPdo = new MysqlPdo();
-						
-			$sql="select city from tb_city where provinceId in(select provinceId from tb_province where province = :province)";
+			global $pdo;
 			$paraArr = array(":province"=>$province);
-			$cityLists = $cityPdo->getQueryResult($sql,$paraArr);
+			$sql="select city from tb_city where provinceId in(select provinceId from tb_province where province = :province)";			
+			$cityLists = $pdo->getQueryResult($sql,$paraArr);
 			return $cityLists;
 		}
 		/**
@@ -263,12 +261,10 @@
 		 */
 		function getQuestionDetailsByQuestionId($questionId){
 			if($this->isUserLogon()){
-				global $pdo;
+				global $pdo;				
 				$paraArr=array(":questionId"=>$questionId);
 				$sql="select * from tb_question where questionId=:questionId";
 				$questionDetails=$pdo->getQueryResult($sql,$paraArr);
-				// $questionDetails[0]['askDate']=strtotime($questionDetails[0]['askDate']);
-				// $questionDetails[0]['askDate']=string($questionDetails[0]['askDate']);
 				return $questionDetails;
 			}
 			else{
@@ -335,10 +331,79 @@
 		 */
 		function getCommentsForQuestion($questionId){
 			global $pdo;
-			$paraArr=array(":questionId"=>$questionId);
-			$sql="select * from tb_comment where questionId=:questionId";
+			$logonUser=$_SESSION['username']??null;
+			$paraArr=array(":logonUser"=>$logonUser,":questionId"=>$questionId);
+			//$sql="select * from tb_comment where questionId=:questionId";
+			$sql="select case when commenter=:logonUser then 'true' else 'false' end as isCommenter,commentId,";
+			$sql.="questionId,commenter,commentDate,content from tb_comment where questionId=:questionId;";
 			$result=$pdo->getQueryResult($sql,$paraArr);
 			return $result;
 		}
+		
+		/**
+		 * 下面的函数根据评论号删除一个评论
+		 */
+		function deleteCommentForQuestion($commentId){
+			if($this->isUserLogon()){
+				global $pdo;
+				$commenter=$_SESSION['username'];
+				$paraArr=array(":commentId"=>$commentId,":commenter"=>$commenter);
+				$sql="delete from tb_comment where commentId=:commentId and commenter=:commenter";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		/**
+		 * 下面的函数给评论添加相应的回复
+		 */
+		function createReplysForComment($commentId,$content){
+			if($this->isUserLogon()){
+				global $pdo;
+				$replyer=$_SESSION['username'];
+				$replyId=uniqid("",true);
+				$replyDate=date("Y-m-d H:i:s");
+				$paraArr=array(":replyId"=>$replyId,":commentId"=>$commentId,
+					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content);
+				$sql="insert into tb_reply values(:replyId,:commentId,:replyer,:replyDate,:content)";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		/**
+		 * 下面的函数给评论删除相应的回复
+		 */
+		function deleteReplyForComment($replyId){
+			if($this->isUserLogon()){
+				global $pdo;
+				$replyer=$_SESSION['username'];
+				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
+				$sql="delete from tb_reply where replyId=:replyId and replyer=:replyer";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		/**
+		 * 下面的函数给一个评论加载相应的回复信息
+		 */
+		function getReplysForComment($commentId){
+			global $pdo;
+			$paraArr=array(":commentId"=>$commentId);
+			$sql="select * from tb_reply where commentId=:commentId order by replyDate asc";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
+		}
+		
 	}
 ?>

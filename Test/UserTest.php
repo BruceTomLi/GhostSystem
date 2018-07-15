@@ -1,5 +1,6 @@
 <?php
 	require_once(__DIR__."/../Model/User.php");
+	require_once("TestData.php");
 	use PHPUnit\Framework\TestCase;
 	class UserTest extends TestCase{
 		/**
@@ -37,7 +38,7 @@
 		 * 下面测试用户名是否重复，测试数据重复，结果为true
 		 */
 		function testIsUserNameRepeat(){
-			$username="tomtom";
+			$username=RepeatName;
 			$result=$this->user->isUsernameRepeat($username);
 			// if($result){
 				// echo "用户名重复，不可用";
@@ -52,7 +53,7 @@
 		 * 下面测试邮箱是否重复，测试用的邮箱重复，结果为true
 		 */
 		function testIsEmailRepeat(){
-			$email="fasdfa@qq.com";
+			$email=RepeatEmail;
 			$result=$this->user->isEmailRepeat($email);
 			// if($result){
 				// echo "邮箱重复，不可用";
@@ -66,8 +67,8 @@
 		 * 下面测试用户登录功能，测试用的数据可以获取到用户名为“王五”的用户
 		 */
 		function testLogin(){
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;			
 			$result=$this->user->login($password, $username);
 			$this->assertEquals($result,"王五");
 		}
@@ -106,7 +107,7 @@
 		 * 下面测试用户注册时根据省份获取城市列表的功能
 		 */
 		function testGetCityList(){
-			$province="湖北省";
+			$province=Province;
 			$this->assertTrue(!empty($this->user->getCityList($province)));
 		}
 		
@@ -115,13 +116,13 @@
 		 */
 		function testCreateNewQuestion(){
 			//测试这个功能需要先登录
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;			
 			$result=$this->user->login($password, $username);
 			
-			$questionType="IT";
-			$questionContent="这是单元测试里面用来测试创建一个新的问题的测试内容";
-			$questionDescription="这里是问题描述，实际情况中可以填写超文本信息";
+			$questionType=QuestionType;
+			$questionContent=QuestionContent;
+			$questionDescription=QuestionDescription;
 			$result=$this->user->createNewQuestion($questionType, $questionContent, $questionDescription);
 			//问题重复时不添加问题
 			if(!$this->user->isQuestionRepeat($questionContent)){				
@@ -140,8 +141,8 @@
 		 */
 		function testGetSelfQuestionList(){
 			//测试这个功能需要先登录
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;			
 			$result=$this->user->login($password, $username);
 			
 			$questionList=$this->user->getSelfQuestionList();
@@ -156,11 +157,11 @@
 		 */
 		function testGetQuestionDetailsByQuestionId(){
 			//测试这个功能需要先登录
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
-			$questionId="5b45c856e9c0f6.75638451";			
+			$questionId=QuestionId;			
 			$questionDescription=$this->user->getQuestionDetailsByQuestionId($questionId);
 			$this->assertTrue(!empty($questionDescription));
 			//测试完之后退出登录
@@ -172,8 +173,8 @@
 		 */
 		function testGetQuestionListByContentOrDescription(){
 			//测试这个功能需要先登录
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
 			$keyword="单元测试";
@@ -185,32 +186,33 @@
 		
 		/**
 		 * 下面测试用户删除一个问题
+		 * 下面的函数写的没问题，但是测试之后会删除数据，所以先注释
 		 */
-		function testDeleteSelfQuestion(){
+		/*function testDeleteSelfQuestion(){
 			//测试这个功能需要先登录
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
-			$questionId="5b45c856e9c0f6.75638452";
+			$questionId=QuestionId;
 			$result=$this->user->deleteSelfQuestion($questionId);
 			//下面的测试条件是因为用户可能已经删除了问题，那么数据库修改的结果就是影响函数为0
 			$this->assertTrue($result==1 || $result==0);
 			//测试完之后退出登录
 			$this->user->logout();
-		}
+		}*/
 		
 		/**
 		 * 下面测试用户给问题添加一条评论
 		 */
 		function testCommentQuestion(){
 			//测试这个功能需要先登录
-			$password="wangwu@123";
-			$username="王五";
+			$username=UserName;
+			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
-			$questionId="5b45c856e9c0f6.75638452";
-			$content="这里测试给问题增加一条评论";
+			$questionId=QuestionId;
+			$content=ExampleComment;
 			$result=$this->user->commentQuestion($questionId, $content);
 			//下面的测试条件是因为用户可能已经删除了问题，那么数据库修改的结果就是影响函数为0
 			$this->assertTrue($result==1 || $result==0);
@@ -222,11 +224,78 @@
 		 * 下面测试通过问题号加载用户对该问题的评论
 		 */
 		function testGetCommentsForQuestion(){
-			$questionId="5b45c856e9c0f6.75638452";
+			$questionId=QuestionId;
 			$result=$this->user->getCommentsForQuestion($questionId);
 			$this->assertTrue(!empty($result));
 		}
 		
+		/**
+		 * 下面测试删除一个问题的一条评论
+		 * 下面的函数写的没问题，但是测试之后会删除数据，所以先注释
+		 */
+		/*function testDeleteCommentForQuestion(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$result=$this->user->login($password, $username);
+			
+			$commentId=CommentId;
+			$result=$this->user->deleteCommentForQuestion($commentId);
+			$this->assertTrue($result==1 || $result==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}*/
+		
+		/**
+		 * 下面测试通过评论号加载用户对该评论的回复
+		 * 这个测试每云心一次都会在数据库中增加一条信息
+		 */
+		function testCreateReplysForComment(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$result=$this->user->login($password, $username);
+			
+			$commentId=CommentId;
+			$content=ReplyContent;
+			$result=$this->user->createReplysForComment($commentId,$content);
+			//添加一条回复就是向数据库中插入了一条值，为0是该评论不存在（已经被删除的情况）
+			$this->assertTrue($result==1 || $result==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		/**
+		 * 下面测试通过回复号删除相应评论的回复
+		 * 这个测试执行第一次的时候会删除数据库中的数据，之后在执行就不会了
+		 * 下面的函数写的没问题，但是测试之后会删除数据，所以先注释
+		 */
+		/*function testDeleteReplyForComment(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$result=$this->user->login($password, $username);
+			
+			$replyId=ReplyId;
+			$result=$this->user->deleteReplyForComment($replyId);
+			//删除回复信息的评论就是在数据库中删除了一条信息，也可能已经删除
+			$this->assertTrue($result==1 || $result==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}*/
+		
+		/**
+		 * 下面测试加载一个评论的所有回复信息
+		 */
+		function testGetReplysForComment(){
+			$commentId=CommentId;
+			$result=$this->user->getReplysForComment($commentId);
+			$this->assertTrue(!empty($result));
+		}
+		 
 		/**
 		 * 下面演示sql注入
 		 */

@@ -19,7 +19,7 @@
 		
 		function getQuestionDetails($questionId){
 			global $pdo;
-			$paraArr=array(":questionId"=>$questionId);
+			$paraArr=array(":questionId"=>$questionId);			
 			$sql="select * from tb_question where questionId=:questionId";
 			$result=$pdo->getQueryResult($sql,$paraArr);
 			return $result;

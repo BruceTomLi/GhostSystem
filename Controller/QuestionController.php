@@ -75,10 +75,40 @@
 		public function commentQuestion(){
 			$questionId=$_REQUEST['questionId'];
 			$content=$_REQUEST['content'];
-			$result=json_encode($this->user->commentQuestion($questionId, $content));
+			$resultArr=array("affectRow"=>$this->user->commentQuestion($questionId, $content));
+			$result=json_encode($resultArr);
 			return $result;
 		}
 		
+		/**
+		 * 下面删除一条评论信息
+		 */
+		public function deleteCommentForQuestion(){
+			$commentId=$_REQUEST['commentId'];
+			$resultArr=array("affectRow"=>$this->user->deleteCommentForQuestion($commentId));
+			$result=json_encode($resultArr);
+			return $result;
+		}
+		
+		/**
+		 * 获取评论的回复信息
+		 */
+		public function getReplysForComment(){
+			$commentId=$_REQUEST['commentId'];
+			$result=json_encode($this->user->getReplysForComment($commentId));
+			return $result;
+		}
+		
+		/**
+		 * 回复一条评论
+		 */
+		public function replyComment(){
+			$commentId=$_REQUEST['commentId'];
+			$content=$_REQUEST['content'];
+			$result=array("insertRow"=>$this->user->createReplysForComment($commentId, $content));
+			$result=json_encode($result);
+			return $result;
+		}
 		
 		public function selectAction(){
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){
@@ -107,6 +137,15 @@
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="commentQuestion"){
 				return $this->commentQuestion();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteCommentForQuestion"){
+				return $this->deleteCommentForQuestion();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getReplysForComment"){
+				return $this->getReplysForComment();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyComment"){
+				return $this->replyComment();
 			}
 			return "没有发送合适的请求";
 		}
