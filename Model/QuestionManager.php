@@ -12,7 +12,7 @@
 		 */
 		function getAllQuestionList(){
 			global $pdo;
-			$sql="select * from tb_question order by askDate desc";
+			$sql="select * from tb_question where enable=1 order by askDate desc";
 			$result=$pdo->getQueryResult($sql);
 			return $result;
 		}

@@ -42,9 +42,9 @@
 			return $questionList;
 		}
 		
-		public function deleteSelfQuestion(){
+		public function disableSelfQuestion(){
 			$questionId=$_REQUEST['questionId'];
-			$affectRow=$this->user->deleteSelfQuestion($questionId);
+			$affectRow=$this->user->disableSelfQuestion($questionId);
 			$resultArr=array("affectRow"=>$affectRow);
 			$result=json_encode($resultArr);
 			return $result;
@@ -75,17 +75,26 @@
 		public function commentQuestion(){
 			$questionId=$_REQUEST['questionId'];
 			$content=$_REQUEST['content'];
-			$resultArr=array("affectRow"=>$this->user->commentQuestion($questionId, $content));
-			$result=json_encode($resultArr);
+			$result="";
+			if($this->user->isUserLogon()){
+				$resultArr=$this->user->commentQuestion($questionId, $content);
+				array_push($resultArr,array("isLogon"=>"true"));
+				$result=json_encode($resultArr);
+			}
+			else{
+				$resultArr=array("isLogon"=>"false");
+				$result=json_encode($resultArr);
+			}
+			
 			return $result;
 		}
 		
 		/**
 		 * 下面删除一条评论信息
 		 */
-		public function deleteCommentForQuestion(){
+		public function disableCommentForQuestion(){
 			$commentId=$_REQUEST['commentId'];
-			$resultArr=array("affectRow"=>$this->user->deleteCommentForQuestion($commentId));
+			$resultArr=array("affectRow"=>$this->user->disableCommentForQuestion($commentId));
 			$result=json_encode($resultArr);
 			return $result;
 		}
@@ -95,17 +104,71 @@
 		 */
 		public function getReplysForComment(){
 			$commentId=$_REQUEST['commentId'];
-			$result=json_encode($this->user->getReplysForComment($commentId));
+			$logonUser="";
+			if($this->user->isUserLogon()){
+				$logonUser=$this->user->getLogonUsername();
+			}
+			$resultArr=array("logonUser"=>$logonUser,"replys"=>$this->user->getReplysForComment($commentId));
+			$result=json_encode($resultArr);
 			return $result;
 		}
 		
 		/**
 		 * 回复一条评论
 		 */
-		public function replyComment(){
+		public function replyComment(){			
 			$commentId=$_REQUEST['commentId'];
+			$fatherReplyId=$_REQUEST['fatherReplyId'];
 			$content=$_REQUEST['content'];
-			$result=array("insertRow"=>$this->user->createReplysForComment($commentId, $content));
+			$result="";
+			if($this->user->isUserLogon()){
+				//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
+				$result=$this->user->createReplyForComment($fatherReplyId,$commentId, $content);
+				array_push($result,array("isLogon"=>"true"));
+				$result=json_encode($result);
+			}
+			else{
+				$result=array("isLogon"=>"false");
+				$result=json_encode($result);
+			}			
+			return $result;
+		}
+		/**
+		 * 回复一条回复
+		 */
+		public function replyReply(){
+			$commentId=$_REQUEST['commentId'];
+			$fatherReplyId=$_REQUEST['fatherReplyId'];
+			$content=$_REQUEST['content'];
+			$result="";
+			if($this->user->isUserLogon()){
+				//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
+				$result=$this->user->createReplyForReply($fatherReplyId,$commentId, $content);
+				$result=json_encode($result);
+			}
+			else{
+				$result=array("isLogon"=>"false");
+				$result=json_encode($result);
+			}			
+			return $result;
+		}
+		
+		/**
+		 * 删除一条对评论的回复
+		 */
+		public function disableReplyForComment(){
+			$replyId=$_REQUEST['replyId'];
+			$result=array("disableRow"=>$this->user->disableReplyForComment($replyId));
+			$result=json_encode($result);
+			return $result;
+		}
+		
+		/**
+		 * 删除一条对回复的回复
+		 */
+		public function disableReplyForReply(){
+			$replyId=$_REQUEST['replyId'];
+			$result=array("disableRow"=>$this->user->disableReplyForReply($replyId));
 			$result=json_encode($result);
 			return $result;
 		}
@@ -126,8 +189,8 @@
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchQuestionListByContentOrDescription"){
 				return $this->searchQuestionListByContentOrDescription();
 			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfQuestion"){
-				return $this->deleteSelfQuestion();
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfQuestion"){
+				return $this->disableSelfQuestion();
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllQuestion"){
 				return $this->getAllQuestion();
@@ -138,8 +201,8 @@
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="commentQuestion"){
 				return $this->commentQuestion();
 			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteCommentForQuestion"){
-				return $this->deleteCommentForQuestion();
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableCommentForQuestion"){
+				return $this->disableCommentForQuestion();
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getReplysForComment"){
 				return $this->getReplysForComment();
@@ -147,10 +210,20 @@
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyComment"){
 				return $this->replyComment();
 			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyReply"){
+				return $this->replyReply();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForComment"){
+				return $this->disableReplyForComment();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForReply"){
+				return $this->disableReplyForReply();
+			}
 			return "没有发送合适的请求";
 		}
 	}
 	
 	$questionController=new QuestionController();
 	echo $questionController->selectAction();
+	// echo $questionController->replyComment();
 ?>

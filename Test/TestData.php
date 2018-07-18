@@ -12,9 +12,10 @@
 	define("QuestionType","IT");
 	define("QuestionContent","这是单元测试里面用来测试创建一个新的问题的测试内容");
 	define("QuestionDescription","这里是问题描述，实际情况中可以填写超文本信息");
-	define("QuestionId","5b4aeca4b6af63.52892676");
+	define("QuestionId","5b4aef6c45e9e6.45739237");
 	define("ExampleComment","这里测试给问题增加一条评论");
-	define("CommentId","5b4aed47466987.81672317");
-	define("ReplyId","5b4aef6c5d4789.49035117");
+	define("CommentId","5b4dd0a4ebafb1.55621100");
+	define("ReplyId","5b4dbb8b045832.31629494");
 	define("ReplyContent","这里测试给一条评论添加一条回复");
+	define("FatherReplyId","5b4dbb8b045832.31629494");
 ?>

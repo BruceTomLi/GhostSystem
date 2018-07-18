@@ -25,8 +25,8 @@
 					$password=md5($password);
 					$userId=uniqid('',true);
 					$paraArr=array(':userId'=>$userId,':username'=>$username,':password'=>$password,':email'=>$email,
-						':sex'=>$sex,':job'=>$job,':province'=>$province,':city'=>$city,':oneWord'=>$oneWord,':heading'=>$heading);
-					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading)";
+						':sex'=>$sex,':job'=>$job,':province'=>$province,':city'=>$city,':oneWord'=>$oneWord,':heading'=>$heading,':enable'=>"1");
+					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading,:enable)";
 					//$sql="insert into tb_user values(null,'$username','$password','$email',$sex,'$province','$job','$city','$oneWord','$heading')";
 					//echo $sql;
 					$result=$pdo->getUIDResult($sql,$paraArr);
@@ -106,7 +106,7 @@
 				$password=md5($password);
 				global $pdo;
 				$paraArr=array(":password"=>$password,":emailOrUsername"=>$emailOrUsername);
-				$sql="select username from tb_user where password=:password and (email=:emailOrUsername or username=:emailOrUsername);";
+				$sql="select username from tb_user where password=:password and (email=:emailOrUsername or username=:emailOrUsername) and enable=1;";
 				$result=$pdo->getOneFiled($sql, 'username',$paraArr);
 				if(!empty($result)){
 					$_SESSION['username']=$result;
@@ -147,8 +147,8 @@
 				$asker=$_SESSION['username'];
 				$askerDate=date("Y-m-d H:i:s");
 				$paraArr=array(":questionId"=>$questionId,":asker"=>$asker,":askDate"=>$askerDate,":questionType"=>$questionType,
-					":questionContent"=>$questionContent,":questionDescription"=>$questionDescription);
-				$sql="insert into tb_question values(:questionId,:asker,:askDate,:questionType,:questionContent,:questionDescription)";
+					":questionContent"=>$questionContent,":questionDescription"=>$questionDescription,":enable"=>"1");
+				$sql="insert into tb_question values(:questionId,:asker,:askDate,:questionType,:questionContent,:questionDescription,:enable)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -163,7 +163,7 @@
 		function isQuestionRepeat($questionContent){
 			global $pdo;
 			$paraArr=array(":questionContent"=>$questionContent);
-			$sql="select count(*) as questionCount from tb_question where content=:questionContent";
+			$sql="select count(*) as questionCount from tb_question where content=:questionContent and enable=1";
 			$count=$pdo->getOneFiled($sql, "questionCount",$paraArr);
 			$result=$count>0?true:false;
 			return $result;
@@ -281,7 +281,7 @@
 				$username=$_SESSION['username'];
 				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
 				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select * from tb_question where asker=:asker and (content like :keyword or questionDescription like :keyword)";
+				$sql="select * from tb_question where asker=:asker and (content like :keyword or questionDescription like :keyword) and enable=1";
 				$questionList=$pdo->getQueryResult($sql,$paraArr);
 				return $questionList;
 			}
@@ -293,11 +293,11 @@
 		/**
 		 * 下面的函数用来删除用户个人的问题
 		 */
-		function deleteSelfQuestion($questionId){
+		function disableSelfQuestion($questionId){
 			if($this->isUserLogon()){
 				global $pdo;
 				$paraArr=array(":questionId"=>$questionId);
-				$sql="delete from tb_question where questionId=:questionId";
+				$sql="update tb_question set enable=0 where questionId=:questionId";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -312,14 +312,20 @@
 		function commentQuestion($questionId,$content){
 			if($this->isUserLogon()){
 				global $pdo;
+				//向数据库中增加评论信息
 				$commenter=$_SESSION['username'];
 				$commentId=uniqid("",true);
 				$commentDate=date("Y-m-d H:i:s");
 				$paraArr=array(":commentId"=>$commentId,":questionId"=>$questionId,
-					":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content);
-				$sql="insert into tb_comment values(:commentId,:questionId,:commenter,:commentDate,:content)";
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
+					":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content,":enable"=>"1");
+				$sql="insert into tb_comment values(:commentId,:questionId,:commenter,:commentDate,:content,:enable)";
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				
+				$comment=$this->getCommentByCommentId($commentId);
+				
+				$resultArr=array("affectRow"=>$affectRow,"createdComment"=>$comment);				
+				
+				return $resultArr;
 			}
 			else{
 				return null;
@@ -327,15 +333,31 @@
 		}
 		
 		/**
+		 * 下面的函数通过commentId来获取相应的comment，以便于用户在提交一个评论之后
+		 * 可以不刷新页面就看到新的评论信息，因为commentId是在服务器端产生的，所以
+		 * 光凭借前端的信息不足以用jquery动态添加元素
+		 */
+		function getCommentByCommentId($commentId){
+			global $pdo;
+			$paraArr=array(":commentId"=>$commentId);
+			$sql="select * from tb_comment where commentId=:commentId";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
+		}
+		
+		
+		/**
 		 * 下面的函数通过问题号加载相应的评论
 		 */
 		function getCommentsForQuestion($questionId){
 			global $pdo;
-			$logonUser=$_SESSION['username']??null;
+			$logonUser=$_SESSION['username']??"";
 			$paraArr=array(":logonUser"=>$logonUser,":questionId"=>$questionId);
 			//$sql="select * from tb_comment where questionId=:questionId";
-			$sql="select case when commenter=:logonUser then 'true' else 'false' end as isCommenter,commentId,";
-			$sql.="questionId,commenter,commentDate,content from tb_comment where questionId=:questionId;";
+			//$sql="select case when commenter=:logonUser then 'true' else 'false' end as isCommenter,commentId,";
+			//$sql.="questionId,commenter,commentDate,content from tb_comment where questionId=:questionId;";
+			//由于逻辑变得有点复杂（需要判断是否为当前登录者，需要获取该评论的回复数，所以改为使用存储过程
+			$sql="call pro_getComments(:logonUser,:questionId)";
 			$result=$pdo->getQueryResult($sql,$paraArr);
 			return $result;
 		}
@@ -343,12 +365,12 @@
 		/**
 		 * 下面的函数根据评论号删除一个评论
 		 */
-		function deleteCommentForQuestion($commentId){
+		function disableCommentForQuestion($commentId){
 			if($this->isUserLogon()){
 				global $pdo;
 				$commenter=$_SESSION['username'];
 				$paraArr=array(":commentId"=>$commentId,":commenter"=>$commenter);
-				$sql="delete from tb_comment where commentId=:commentId and commenter=:commenter";
+				$sql="update tb_comment set enable=0 where commentId=:commentId and commenter=:commenter";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -360,15 +382,63 @@
 		/**
 		 * 下面的函数给评论添加相应的回复
 		 */
-		function createReplysForComment($commentId,$content){
+		function createReplyForComment($fatherReplyId,$commentId,$content){
 			if($this->isUserLogon()){
+				//向数据库中插入新的回复信息
 				global $pdo;
 				$replyer=$_SESSION['username'];
 				$replyId=uniqid("",true);
 				$replyDate=date("Y-m-d H:i:s");
-				$paraArr=array(":replyId"=>$replyId,":commentId"=>$commentId,
-					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content);
-				$sql="insert into tb_reply values(:replyId,:commentId,:replyer,:replyDate,:content)";
+				$paraArr=array(":replyId"=>$replyId,":fatherReplyId"=>$fatherReplyId,":commentId"=>$commentId,
+					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content,":enable"=>"1");
+				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,:replyer,:replyDate,:content,:enable)";
+
+				$insertRow=$pdo->getUIDResult($sql,$paraArr);
+				//获取刚插入的回复信息
+				$replyContent=$this->getReplyByReplyId($replyId);
+				$resultArr=array("insertRow"=>$insertRow,"replyContent"=>$replyContent);
+				return $resultArr;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		
+		/**
+		 * 下面的函数给评论回复添加相应的回复
+		 */
+		function createReplyForReply($fatherReplyId,$commentId,$content){
+			if($this->isUserLogon()){
+				//向数据库中插入新的回复信息
+				global $pdo;
+				$replyer=$_SESSION['username'];
+				$replyId=uniqid("",true);
+				$replyDate=date("Y-m-d H:i:s");
+				$paraArr=array(":replyId"=>$replyId,":fatherReplyId"=>$fatherReplyId,":commentId"=>$commentId,
+					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content,":enable"=>"1");
+				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,:replyer,:replyDate,:content,:enable)";
+				$insertRow=$pdo->getUIDResult($sql,$paraArr);
+				//获取刚插入的回复信息
+				$replyContent=$this->getReplyByReplyId($replyId);
+				$resultArr=array("insertRow"=>$insertRow,"replyContent"=>$replyContent);
+				return $resultArr;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		
+		/**
+		 * 下面的函数给评论删除相应的回复
+		 */
+		function disableReplyForComment($replyId){
+			if($this->isUserLogon()){
+				global $pdo;
+				$replyer=$_SESSION['username'];
+				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
+				$sql="update tb_reply set enable=0 where replyId=:replyId and replyer=:replyer";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -378,14 +448,14 @@
 		}
 		
 		/**
-		 * 下面的函数给评论删除相应的回复
+		 * 下面的函数给回复删除相应的回复
 		 */
-		function deleteReplyForComment($replyId){
+		function disableReplyForReply($replyId){
 			if($this->isUserLogon()){
 				global $pdo;
 				$replyer=$_SESSION['username'];
 				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
-				$sql="delete from tb_reply where replyId=:replyId and replyer=:replyer";
+				$sql="update tb_reply set enable=0 where replyId=:replyId and replyer=:replyer";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -400,7 +470,44 @@
 		function getReplysForComment($commentId){
 			global $pdo;
 			$paraArr=array(":commentId"=>$commentId);
-			$sql="select * from tb_reply where commentId=:commentId order by replyDate asc";
+			//下面的sql语句已经对应比较复杂的逻辑了，可以考虑使用mysql的函数或者存储过程来完成
+			//主要作用1.获得当前reply对应的父reply的replyer 2.判断reply表中的replyer是否为当前登录者
+			//作用1是为了在前台显示谁回复了谁的信息，作用2是为了在前台决定是否显示删除按钮
+			$sql="call pro_getReplys(:commentId)";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
+		}
+		
+		/**
+		 * 下面的函数获取单个问题的评论数
+		 */
+		function getCommentCountByQuestionId($questionId){
+			global $pdo;
+			$paraArr=array(":questionId"=>$questionId);
+			$sql="select count(commentId) as commentCount from tb_comment where questionId=:questionId and enable=1";
+			$commentCount=$pdo->getOneFiled($sql, "commentCount",$paraArr);
+			return $commentCount;
+		}
+		
+		/**
+		 * 下面的函数获取单个评论的回复数
+		 */
+		function getReplyCountByCommentId($commentId){
+			global $pdo;
+			$paraArr=array(":commentId"=>$commentId);
+			$sql="select count(replyId) as replyCount from tb_reply where commentId=:commentId and enable=1";
+			$replyCount=$pdo->getOneFiled($sql, "replyCount",$paraArr);
+			return $replyCount;
+		}
+		
+		/**
+		 * 下面的函数通过replyId获取reply
+		 * 主要是为了方便用户在回复完信息之后可以加载出新的信息
+		 */
+		function getReplyByReplyId($replyId){
+			global $pdo;
+			$paraArr=array(":replyId"=>$replyId);
+			$sql="call pro_getReplyByReplyId(:replyId)";
 			$result=$pdo->getQueryResult($sql,$paraArr);
 			return $result;
 		}

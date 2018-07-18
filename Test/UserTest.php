@@ -185,22 +185,21 @@
 		}
 		
 		/**
-		 * 下面测试用户删除一个问题
-		 * 下面的函数写的没问题，但是测试之后会删除数据，所以先注释
+		 * 下面测试用户禁用一个问题
 		 */
-		/*function testDeleteSelfQuestion(){
+		function testDisableSelfQuestion(){
 			//测试这个功能需要先登录
 			$username=UserName;
 			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
 			$questionId=QuestionId;
-			$result=$this->user->deleteSelfQuestion($questionId);
-			//下面的测试条件是因为用户可能已经删除了问题，那么数据库修改的结果就是影响函数为0
+			$result=$this->user->disableSelfQuestion($questionId);
+			//下面的测试条件是因为用户可能已经禁用了问题，那么数据库修改的结果就是影响函数为0
 			$this->assertTrue($result==1 || $result==0);
 			//测试完之后退出登录
 			$this->user->logout();
-		}*/
+		}
 		
 		/**
 		 * 下面测试用户给问题添加一条评论
@@ -215,7 +214,7 @@
 			$content=ExampleComment;
 			$result=$this->user->commentQuestion($questionId, $content);
 			//下面的测试条件是因为用户可能已经删除了问题，那么数据库修改的结果就是影响函数为0
-			$this->assertTrue($result==1 || $result==0);
+			$this->assertTrue($result["affectRow"]==1 || $result["affectRow"]==0);
 			//测试完之后退出登录
 			$this->user->logout();
 		}
@@ -230,38 +229,59 @@
 		}
 		
 		/**
-		 * 下面测试删除一个问题的一条评论
-		 * 下面的函数写的没问题，但是测试之后会删除数据，所以先注释
+		 * 下面测试禁用一个问题的一条评论
 		 */
-		/*function testDeleteCommentForQuestion(){
+		function testDisableCommentForQuestion(){
 			//测试这个功能需要先登录
 			$username=UserName;
 			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
 			$commentId=CommentId;
-			$result=$this->user->deleteCommentForQuestion($commentId);
+			$result=$this->user->disableCommentForQuestion($commentId);
 			$this->assertTrue($result==1 || $result==0);
 			
 			//测试完之后退出登录
 			$this->user->logout();
-		}*/
+		}
 		
 		/**
 		 * 下面测试通过评论号加载用户对该评论的回复
-		 * 这个测试每云心一次都会在数据库中增加一条信息
+		 * 这个测试每运行一次都会在数据库中增加一条信息
 		 */
-		function testCreateReplysForComment(){
+		function testCreateReplyForComment(){
 			//测试这个功能需要先登录
 			$username=UserName;
 			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
+			$fatherReplyId=CommentId;
 			$commentId=CommentId;
 			$content=ReplyContent;
-			$result=$this->user->createReplysForComment($commentId,$content);
-			//添加一条回复就是向数据库中插入了一条值，为0是该评论不存在（已经被删除的情况）
-			$this->assertTrue($result==1 || $result==0);
+			$result=$this->user->createReplyForComment($fatherReplyId, $commentId, $content);
+			//添加一条回复就是向数据库中插入了一条对评论的回复记录
+			$this->assertEquals($result["insertRow"],1);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		/**
+		 * 下面测试通过评论号加载用户对该评论的回复
+		 * 这个测试每运行一次都会在数据库中增加一条信息
+		 */
+		function testCreateReplyForReply(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$result=$this->user->login($password, $username);
+			
+			$fatherReplyId=FatherReplyId;
+			$commentId=CommentId;
+			$content=ReplyContent;
+			$result=$this->user->createReplyForReply($fatherReplyId, $commentId, $content);
+			//添加一条回复就是向数据库中插入了一条值，为0是该评论不存在
+			$this->assertTrue($result["insertRow"]==1);
 			
 			//测试完之后退出登录
 			$this->user->logout();
@@ -272,20 +292,20 @@
 		 * 这个测试执行第一次的时候会删除数据库中的数据，之后在执行就不会了
 		 * 下面的函数写的没问题，但是测试之后会删除数据，所以先注释
 		 */
-		/*function testDeleteReplyForComment(){
+		function testDisableReplyForComment(){
 			//测试这个功能需要先登录
 			$username=UserName;
 			$password=Password;	
 			$result=$this->user->login($password, $username);
 			
 			$replyId=ReplyId;
-			$result=$this->user->deleteReplyForComment($replyId);
-			//删除回复信息的评论就是在数据库中删除了一条信息，也可能已经删除
-			$this->assertTrue($result==1 || $result==0);
+			$result=$this->user->disableReplyForComment($replyId);
+			//禁用回复信息的评论就是在数据库中将评论信息改为禁用，也可能已经禁用
+			$this->assertTrue($result==0 || $result==1);
 			
 			//测试完之后退出登录
 			$this->user->logout();
-		}*/
+		}
 		
 		/**
 		 * 下面测试加载一个评论的所有回复信息
@@ -294,6 +314,42 @@
 			$commentId=CommentId;
 			$result=$this->user->getReplysForComment($commentId);
 			$this->assertTrue(!empty($result));
+		}
+		
+		/**
+		 * 下面测试通过评论号获取评论信息
+		 */
+		function testGetCommentByCommentId(){
+			$commentId=CommentId;
+			$result=$this->user->getCommentByCommentId($commentId);
+			$this->assertTrue(!empty($result));
+		}
+		
+		/**
+		 * 下面测试根据问题号获取评论数
+		 */
+		function testGetCommentCountByQuestionId(){
+			$questionId=QuestionId;
+			$result=$this->user->getCommentCountByQuestionId($questionId);
+			$this->assertTrue($result>0);
+		}
+		
+		/**
+		 * 下面测试根据评论号获取回复数
+		 */
+		function testGetReplyCountByCommentId(){
+			$commentId=CommentId;
+			$result=$this->user->getReplyCountByCommentId($commentId);
+			$this->assertTrue($result>0);
+		}
+		
+		/**
+		 * 下面测试通过replyId获取reply
+		 */
+		function testGetReplyByReplyId(){
+			$replyId=ReplyId;
+			$result=$this->user->getReplyByReplyId($replyId);
+			$this->assertTrue($result>0);
 		}
 		 
 		/**
@@ -312,4 +368,5 @@
 		}*/
 		
 	}
+
 ?>

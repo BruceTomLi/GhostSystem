@@ -32,7 +32,7 @@
 						</ul>
 						<?php
 							if(isset($_SESSION['username'])){
-								echo "<span>欢迎你，{$_SESSION['username']}</span>";
+								echo "<span id='welcomeInfo'>欢迎你，{$_SESSION['username']}</span>";
 								echo "<a class='btn btn-info' href='../manage/selfSetting.php'>设置</a>";
 								echo "<button id='logoutBtn' onClick='logout()' class='btn btn-warning'>注销</button>";
 							}

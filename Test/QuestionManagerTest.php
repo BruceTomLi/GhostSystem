@@ -1,5 +1,6 @@
 <?php
 	require_once(__DIR__."/../Model/QuestionManager.php");
+	require_once("TestData.php");
 	use PHPUnit\Framework\TestCase;
 	
 	class QuestionManagerTest extends TestCase{
@@ -17,7 +18,7 @@
 		}
 		
 		function testGetQuestionDetails(){
-			$questionId="5b45c856e9c0f6.75638451";
+			$questionId=QuestionId;
 			$result=$this->questionManager->getQuestionDetails($questionId);
 			$this->assertTrue(!empty($result));
 		}
