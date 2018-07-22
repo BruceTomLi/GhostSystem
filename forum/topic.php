@@ -9,7 +9,6 @@
 		<link href="../css/topic.css" rel="stylesheet" type="text/css">
 		<script src="../js/jquery-1.9.1.js"></script>
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
-		<script src="../js/topic.js"></script>
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -101,28 +100,7 @@
 							</div>
 						</div>
 						<div class="span3 right-nav">
-							<p>
-								<span>
-									今日话题
-								</span>
-								<span>
-									<a href="#" class="pull-right">更多 »</a>
-								</span>
-							</p>
-							<hr>
-							<p>
-								<span>
-									新增话题
-								</span>
-								<span>
-									<a href="#" class="pull-right">更多 »</a>
-								</span>								
-							</p>
-							<p>
-								<a href="#"><span class="label label-success">Ghost</span></a>
-								<a href="#"><span class="label label-success">Mysql</span></a>
-								<a href="#"><span class="label label-success">编译原理</span></a>
-							</p>
+							<?php include(__DIR__."/../View/topicRightNav.php"); ?>
 						</div>
 					</div>
 				</div>

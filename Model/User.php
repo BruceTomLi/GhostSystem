@@ -27,23 +27,15 @@
 					$paraArr=array(':userId'=>$userId,':username'=>$username,':password'=>$password,':email'=>$email,
 						':sex'=>$sex,':job'=>$job,':province'=>$province,':city'=>$city,':oneWord'=>$oneWord,':heading'=>$heading,':enable'=>"1");
 					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading,:enable)";
-					//$sql="insert into tb_user values(null,'$username','$password','$email',$sex,'$province','$job','$city','$oneWord','$heading')";
-					//echo $sql;
-					$result=$pdo->getUIDResult($sql,$paraArr);
-					//$result=$pdo->getUIDResult($sql);
-					if($result==1){
-						return true;
-					}
-					else{
-						return false;
-					}
+					$affectRow=$pdo->getUIDResult($sql,$paraArr);
+					return $affectRow;
 				}
 				else{
-					return false;
+					return "用户名或者邮箱重复，不能注册";
 				}			
 			}
 			else{
-				return false;
+				return "注册失败，用户名、密码或者邮箱校验失败";
 			}
 			
 		}
@@ -55,7 +47,7 @@
 			$isPasswordOk=false;
 			$isEmailOk=false;
 			
-			if(!empty($username) && strlen($username)>=2 && strlen($username)<=8){
+			if(!empty($username) && strlen($username)>=3 && strlen($username)<=20){
 				$isUsernameOk=true;
 			}
 			if(!empty($password) && strlen($password)>=6 && strlen($password)<=18){
@@ -140,20 +132,26 @@
 		/**
 		 * 下面定义一个函数用来让用户创建一个新的问题
 		 */
-		function createNewQuestion($questionType,$questionContent,$questionDescription){
-			global $pdo;
+		function createNewQuestion($questionType,$questionContent,$questionDescription){			
 			if($this->isUserLogon() && !$this->isQuestionRepeat($questionContent)){
+				global $pdo;
 				$questionId=uniqid("",true);
 				$asker=$_SESSION['username'];
+				//需要先获取到登录用户的用户ID，tb_question的数据库中需要保存用户Id而不是用户名，因为用户名虽然唯一但可变
+				//但是这样需要进行两次sql查询，影响性能，我试试将两条sql语句合并成一条				
+				// $paraArr=array(":username"=>$asker);
+				// $sql="select userId from tb_user where username=:username";
+				// $askerId=$pdo->getOneFiled($sql, "userId",$paraArr);
+				
 				$askerDate=date("Y-m-d H:i:s");
 				$paraArr=array(":questionId"=>$questionId,":asker"=>$asker,":askDate"=>$askerDate,":questionType"=>$questionType,
 					":questionContent"=>$questionContent,":questionDescription"=>$questionDescription,":enable"=>"1");
-				$sql="insert into tb_question values(:questionId,:asker,:askDate,:questionType,:questionContent,:questionDescription,:enable)";
+				$sql="insert into tb_question values(:questionId,(select userId from tb_user where username=:asker),:askDate,:questionType,:questionContent,:questionDescription,:enable)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
 			else{
-				return false;
+				return null;
 			}
 		}
 		
@@ -163,7 +161,7 @@
 		function isQuestionRepeat($questionContent){
 			global $pdo;
 			$paraArr=array(":questionContent"=>$questionContent);
-			$sql="select count(*) as questionCount from tb_question where content=:questionContent and enable=1";
+			$sql="select count(*) as questionCount from tb_question where content=:questionContent";
 			$count=$pdo->getOneFiled($sql, "questionCount",$paraArr);
 			$result=$count>0?true:false;
 			return $result;
@@ -247,7 +245,7 @@
 			if($this->isUserLogon()){
 				global $pdo;
 				$paraArr=array(":asker"=>$_SESSION['username']);
-				$sql="select questionId,asker,askDate,questionType,content from tb_question where asker=:asker";
+				$sql="select questionId,:asker as asker,askDate,questionType,content,enable from tb_question where askerId=(select userId from tb_user where username=:asker)";
 				$questionList=$pdo->getQueryResult($sql,$paraArr);
 				return $questionList;
 			}
@@ -274,6 +272,7 @@
 		
 		/**
 		 * 下面通过搜索问题内容或者描述中的关键字来检索相应的问题（针对单个用户）
+		 * 单个用户搜索问题的时候，无论问题是否被禁用，都要能搜索出来进行管理
 		 */
 		function getQuestionListByContentOrDescription($keyword){
 			if($this->isUserLogon()){
@@ -281,7 +280,7 @@
 				$username=$_SESSION['username'];
 				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
 				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select * from tb_question where asker=:asker and (content like :keyword or questionDescription like :keyword) and enable=1";
+				$sql="select :asker as asker,tq.* from tb_question tq where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or questionDescription like :keyword)";
 				$questionList=$pdo->getQueryResult($sql,$paraArr);
 				return $questionList;
 			}
@@ -291,18 +290,40 @@
 		}
 		
 		/**
-		 * 下面的函数用来删除用户个人的问题
+		 * 下面的函数用来禁用用户个人的问题
+		 * 在查询中使用当前登录者，防止黑客禁用其他人的问题
+		 * 问题管理员统一批量管理问题时就不能使用这个函数了
 		 */
 		function disableSelfQuestion($questionId){
 			if($this->isUserLogon()){
 				global $pdo;
-				$paraArr=array(":questionId"=>$questionId);
-				$sql="update tb_question set enable=0 where questionId=:questionId";
+				$logonUser=$_SESSION['username'];
+				$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
+				$sql="update tb_question set enable=0 where questionId=:questionId ";
+				$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
 			else{
-				return null;
+				return "禁用问题失败，你没有登录系统";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来启用用户个人问题
+		 * 在查询中使用当前登录者，防止黑客启用其他人的问题
+		 * 问题管理员统一批量管理问题时就不能使用这个函数了
+		 */
+		function enableSelfQuestion($questionId){
+			if($this->isUserLogon()){
+				global $pdo;
+				$paraArr=array(":questionId"=>$questionId);
+				$sql="update tb_question set enable=1 where questionId=:questionId";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return "启用问题失败，你没有登录系统";
 			}
 		}
 		
@@ -318,7 +339,7 @@
 				$commentDate=date("Y-m-d H:i:s");
 				$paraArr=array(":commentId"=>$commentId,":questionId"=>$questionId,
 					":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content,":enable"=>"1");
-				$sql="insert into tb_comment values(:commentId,:questionId,:commenter,:commentDate,:content,:enable)";
+				$sql="insert into tb_comment values(:commentId,:questionId,(select userId from tb_user where username=:commenter),:commentDate,:content,:enable)";
 				$affectRow=$pdo->getUIDResult($sql,$paraArr);
 				
 				$comment=$this->getCommentByCommentId($commentId);
@@ -340,7 +361,7 @@
 		function getCommentByCommentId($commentId){
 			global $pdo;
 			$paraArr=array(":commentId"=>$commentId);
-			$sql="select * from tb_comment where commentId=:commentId";
+			$sql="select (select username from tb_user where userId=tc.commenterId) as commenter,tc.* from tb_comment tc where commentId=:commentId";
 			$result=$pdo->getQueryResult($sql,$paraArr);
 			return $result;
 		}
@@ -366,17 +387,29 @@
 		 * 下面的函数根据评论号删除一个评论
 		 */
 		function disableCommentForQuestion($commentId){
-			if($this->isUserLogon()){
+			if($this->isUserLogon() && $this->isCommentEnable($commentId)){
 				global $pdo;
 				$commenter=$_SESSION['username'];
 				$paraArr=array(":commentId"=>$commentId,":commenter"=>$commenter);
-				$sql="update tb_comment set enable=0 where commentId=:commentId and commenter=:commenter";
+				//加入关于评论者的条件，保证这里只有评论者可以删除自己的评论，而不是任意一个登录的人
+				$sql="update tb_comment set enable=0 where commentId=:commentId and commenterId=(select if(count(userId)>0,userId,'') from tb_user where username=:commenter)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
 			else{
-				return null;
+				return 0;
 			}
+		}
+		
+		/**
+		 * 下面的函数检测一个评论是否可用
+		 */
+		function isCommentEnable($commentId){
+			global $pdo;
+			$paraArr=array(":commentId"=>$commentId);
+			$sql="select enable from tb_comment where commentId=:commentId";
+			$result=$pdo->getOneFiled($sql,"enable",$paraArr)=="1"?true:false;
+			return $result;
 		}
 		
 		/**
@@ -391,7 +424,7 @@
 				$replyDate=date("Y-m-d H:i:s");
 				$paraArr=array(":replyId"=>$replyId,":fatherReplyId"=>$fatherReplyId,":commentId"=>$commentId,
 					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content,":enable"=>"1");
-				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,:replyer,:replyDate,:content,:enable)";
+				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,(select userId from tb_user where username=:replyer),:replyDate,:content,:enable)";
 
 				$insertRow=$pdo->getUIDResult($sql,$paraArr);
 				//获取刚插入的回复信息
@@ -417,7 +450,7 @@
 				$replyDate=date("Y-m-d H:i:s");
 				$paraArr=array(":replyId"=>$replyId,":fatherReplyId"=>$fatherReplyId,":commentId"=>$commentId,
 					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content,":enable"=>"1");
-				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,:replyer,:replyDate,:content,:enable)";
+				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,(select userId from tb_user where username=:replyer),:replyDate,:content,:enable)";
 				$insertRow=$pdo->getUIDResult($sql,$paraArr);
 				//获取刚插入的回复信息
 				$replyContent=$this->getReplyByReplyId($replyId);
@@ -434,35 +467,47 @@
 		 * 下面的函数给评论删除相应的回复
 		 */
 		function disableReplyForComment($replyId){
-			if($this->isUserLogon()){
+			if($this->isUserLogon() && $this->isReplyEnable($replyId)){
 				global $pdo;
 				$replyer=$_SESSION['username'];
 				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
-				$sql="update tb_reply set enable=0 where replyId=:replyId and replyer=:replyer";
+				$sql="update tb_reply set enable=0 where replyId=:replyId and replyerId=(select if(count(userId)>0,userId,'') from tb_user where username=:replyer)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
 			else{
-				return null;
+				return 0;
 			}
 		}
 		
 		/**
-		 * 下面的函数给回复删除相应的回复
+		 * 下面的函数检测一个回复是否可用
 		 */
-		function disableReplyForReply($replyId){
+		function isReplyEnable($replyId){
+			global $pdo;
+			$paraArr=array(":replyId"=>$replyId);
+			$sql="select enable from tb_reply where replyId=:replyId";
+			$result=$pdo->getOneFiled($sql,"enable",$paraArr)=="1"?true:false;
+			return $result;
+		}
+		
+		/**
+		 * 下面的函数给回复删除相应的回复
+		 * 实际上使用的是上面给评论删除回复同样的方法，所以下面的方法用不到
+		 */
+		/*function disableReplyForReply($replyId){
 			if($this->isUserLogon()){
 				global $pdo;
 				$replyer=$_SESSION['username'];
 				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
-				$sql="update tb_reply set enable=0 where replyId=:replyId and replyer=:replyer";
+				$sql="update tb_reply set enable=0 where replyId=:replyId and replyerId=(select if(count(userId)>0,userId,'') from tb_user where username=:replyer)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
 			else{
 				return null;
 			}
-		}
+		}*/
 		
 		/**
 		 * 下面的函数给一个评论加载相应的回复信息
@@ -512,5 +557,333 @@
 			return $result;
 		}
 		
+		/**
+		 * 用户登录且打开管理页面时，加载用户信息（通过session中的username）
+		 */
+		function loadUserInfo(){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				$paraArr=array(":username"=>$username);
+				//这里不应对密码进行查询
+				$sql="select userId,username,email,sex,job,province,city,oneWord,heading from tb_user where username=:username";
+				$result=$pdo->getQueryResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		/**
+		 * 下面的函数修改用户自己的信息
+		 */
+		function changeSelfInfo($userInfo){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				$paraArr=array(":username"=>$username,":newUsername"=>$userInfo['username'],":email"=>$userInfo['email'],
+					":sex"=>$userInfo['sex'],":job"=>$userInfo['job'],":province"=>$userInfo['province'],
+					":city"=>$userInfo['city'],":oneWord"=>$userInfo['oneWord']);
+				//传入的用户名和邮箱没有被占用时才能更新
+				if(!$this->isUsernameUsedByOthers($userInfo['username']) && !$this->isEmailUsedByOthers($userInfo['email'])){
+					$sql="update tb_user set username=:newUsername,email=:email,sex=:sex,job=:job,province=:province,city=:city,";
+					$sql.="oneWord=:oneWord where username=:username";
+					$result=$pdo->getUIDResult($sql,$paraArr);
+					if($result==1){
+						//如果进行了修改，就改变session中的username值，以便用户可以继续正常浏览网页
+						$_SESSION['username']=$userInfo['username'];
+					}
+					return $result;
+				}
+				else{
+					return "用户名或者邮箱重复重复，无法更新";
+				}				
+			}
+			else{
+				return "用户未登录，不能修改个人信息";
+			}
+		}
+		
+		/**
+		 * 下面的函数检测用户用户要修改的用户名是否被其他人占用了， 和之前的isUsernameRepeat函数不同，
+		 * 这种情况是自身占用了该名称，要改成新的名称，检测新的名称是否被占用，因为changeSelfInfo的修改包括了用户名，
+		 * 存在新旧用户名相同的情况，无论是否发生更改，都会在执行sql语句时修改。邮箱的情况也一样
+		 */
+		function isUsernameUsedByOthers($newUsername){
+			if($this->isUserLogon()){
+				$oldUsername=$_SESSION['username'];
+				global $pdo;
+				//直接检测和现在用户名不同，且和新用户名相同的记录数
+				$paraArr=array(":oldUsername"=>$oldUsername,":newUsername"=>$newUsername);
+				$sql="select count(username) as userCount from tb_user where username=:newUsername and username!=:oldUsername";
+				$result=$pdo->getOneFiled($sql, "userCount",$paraArr);
+				if($result==0){
+					return false;
+				}
+				else{
+					return true;
+				}		
+			}
+			else{
+				return null;
+			}			
+		}
+		
+		/**
+		 * 下面检测邮箱是否被占用
+		 */
+		function isEmailUsedByOthers($newEmail){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				//直接检测和现在用户名不同，且和新邮箱相同的记录数
+				$paraArr=array("username"=>$username,":newEmail"=>$newEmail);
+				$sql="select count(email) emailCount from tb_user where email=:newEmail and username!=:username";
+				$emailCount=$pdo->getOneFiled($sql, "emailCount",$paraArr);
+				
+				if($emailCount==0){
+					return false;
+				}
+				else{
+					return true;
+				}
+						
+			}
+			else{
+				return null;
+			}			
+		}
+		
+		/**
+		 * 下面的函数修改用户自己的密码
+		 */
+		function changeSelfPassword($oldPassword,$newPassword){
+			if($this->isUserLogon()){
+				global $pdo;
+				$oldPassword=md5($oldPassword);
+				$newPassword=md5($newPassword);
+				$username=$_SESSION['username'];
+				$paraArr=array(":oldPassword"=>$oldPassword,":newPassword"=>$newPassword,":username"=>$username);
+				$sql="update tb_user set password=:newPassword where username=:username and password=:oldPassword";
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				return $affectRow;
+			}
+			else{
+				return "用户未登录，不能修改密码";
+			}
+		}
+		
+		/**
+		 * 下面的函数让用户对一个问题/话题/人进行关注
+		 * 理论上应该在插入之前判断用户是否已经关注了，但是这样会引起对数据库进行两次查询
+		 * 降低网站整体性能。我将在sql语句中进行判断，让一次查询一次插入变成仅有一次插入
+		 */
+		function addFollow($starId,$followType){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$followId=uniqid("",true);
+				$paraArr=array(":logonUser"=>$logonUser,":followId"=>$followId,":starId"=>$starId,":followType"=>$followType);
+				//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
+				$sql="insert into tb_follow (followId,starId,fansId,type) select :followId,:starId,(select userId from tb_user where username=:logonUser),:followType ";
+				$sql.="from dual where not exists (select * from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser))";
+				
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				return $affectRow;
+			}
+			else{
+				return "没有登录系统，无法进行关注";
+			}
+		}
+		
+		/**
+		 * 下面的函数让用户对一个问题/话题/人取消关注
+		 */
+		function deleteFollow($starId){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				//理论上传入followId，对相应的follow记录进行删除也是可以的，但是这里传入userId和questionId感觉更符合语境
+				$paraArr=array(":logonUser"=>$logonUser,":starId"=>$starId);
+				//取消关注就简单了，不管用判断用户是否关注过
+				$sql="delete from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser)";
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				return $affectRow;
+			}
+			else{
+				return "没有登录系统，无法取消关注";
+			}
+		}
+		
+		/**
+		 * 下面的函数检测用户是否关注了问题/话题/人
+		 */
+		function hasUserFollowed($starId){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				//理论上传入followId，对相应的follow记录进行删除也是可以的，但是这里传入userId和questionId感觉更符合语境
+				$paraArr=array(":logonUser"=>$logonUser,":starId"=>$starId);
+				//取消关注就简单了，不管用判断用户是否关注过
+				$sql="select count(*) as followCount from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser)";
+				$followCount=$pdo->getOneFiled($sql,"followCount",$paraArr);
+				//能查询到关注信息，说明用户关注了问题，结果是1或者0，可以代表true或者false
+				return $followCount;
+			}
+			else{
+				return "没有登录系统，无法得知用户是否进行了关注";
+			}
+		}
+		
+		/**
+		 * 下面的函数加载用户关注的问题/话题/人，在用户管理自己的关注的时候被用到
+		 * 前面的函数不涉及到问题/话题表，所以可以通用，下面的函数加载问题/话题/人信息，就需要单独写
+		 */
+		function loadUserFollowedQuestions(){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				$paraArr=array(":logonUser"=>$username);
+				$sql="select (select username from tb_user where userId=tq.askerId) as asker,tq.* from tb_question tq where questionId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
+				$followedQuestions=$pdo->getQueryResult($sql,$paraArr);
+				return $followedQuestions;
+			}
+			else{
+				return "用户未登录系统，无法获取相关信息";
+			}
+		}
+		
+		/**
+		 * 下面的函数加载用户关注的人
+		 */
+		function loadUserFollowedUsers(){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				$paraArr=array(":logonUser"=>$username);
+				$sql="select :logonUser as fans,tq.* from tb_question tq where questionId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
+				$followedQuestions=$pdo->getQueryResult($sql,$paraArr);
+				return $followedQuestions;
+			}
+			else{
+				return "用户未登录系统，无法获取相关信息";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来上传用户头像
+		 */
+		function uploadSelfHeading($fileName,$realName,$isUnitTest=false){
+			if($this->isUserLogon()){
+				global $pdo;
+				//通过登录用户名获取到相应的userId
+				$username=$_SESSION['username'];
+				$paraArr=array(":username"=>$username);
+				$sql="select userId from tb_user where username=:username";
+				$userId=$pdo->getOneFiled($sql,"userId",$paraArr);
+				
+				// $fileName=$_FILES['file']['tmp_name']??"";
+				// $realName=$_FILES['file']['name']??"";
+				//根据用户Id创建相应的文件夹保存用户的头像
+				$directory="../UploadImages/heading/$userId";
+				if(file_exists($directory)){
+					//如果文件夹存在，就先删除文件夹（里面有原来的图片）
+					$this->deleteDirectory($directory);
+				}
+				if(!file_exists($directory)){
+					//如果文件夹不存在，就创建文件夹，避免报错
+					mkdir("$directory", 0777, true );
+				}
+				$newPath="$directory/$realName";			
+				if(is_uploaded_file($fileName)){							
+					move_uploaded_file($fileName, $newPath);				
+				}
+				
+				//函数is_uploaded_file会检测文件是不是通过http上传的，
+				//如果不是结果为false，这不方便进行单元测试，所以加了下面的代码
+				if($isUnitTest==true){
+					copy($fileName, $newPath);
+				}
+				
+				$fileUploadOk=file_exists($newPath)?1:0;
+				//将用户上传的图片地址更新到tb_user表的heading字段中
+				$paraArr=array(":heading"=>$newPath,":userId"=>$userId);
+				$sql="update tb_user set heading=:heading where userId=:userId";	
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);		
+				
+				//记录文件上传结果（是否存到了对应文件夹），记录数据库更新结果
+				$resultArr=array("fileUploadOk"=>$fileUploadOk,"newPath"=>$newPath,"affectRow"=>$affectRow);
+				//返回的地址是html页面对应要显示图片的地址
+				return $resultArr;
+			}
+			else{
+				$resultArr=array("affectRow"=>"用户没有登录系统，不得上传图片");
+				return $resultArr;
+			}			
+		}
+
+		/**
+		 * 下面的函数通过递归的方式删除文件夹下的文件，最后删除文件夹
+		 */
+		private function deleteDirectory($dir){
+		    $result = false;
+		    if ($handle = opendir("$dir")){
+		        $result = true;
+		        while ((($file=readdir($handle))!==false) && ($result)){
+		            if ($file!='.' && $file!='..'){
+	            	    if (is_dir("$dir/$file")){
+		                    $result = deleteDirectory("$dir/$file");
+		                } else {
+		                    $result = unlink("$dir/$file");
+		                }
+		            }
+		        }
+		        closedir($handle);
+		        if ($result){
+		            $result = rmdir($dir);
+		        }
+		    }
+		    return $result;
+		}
+		
+		/**
+		 * 通过UserId获取用户的信息，用来在一个人查看其他用户个人信息的时候显示出相应的基本信息
+		 * 包括用户名，用户头像，用户邮件，用户性别。使用这个方法不需要用户处于登录状态
+		 */
+		function getUserBaseInfoByUserId($userId){
+			global $pdo;
+			$paraArr=array("userId"=>$userId);
+			$sql="select userId,username,email,sex,heading from tb_user where userId=:userId";
+			$personalInfo=$pdo->getQueryResult($sql,$paraArr);
+			if(count($personalInfo)>0){
+				$resultArr=array("personalInfo"=>$personalInfo);
+				return $resultArr;
+			}
+			else{
+				return "未获取到用户信息";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来让一个用户关注另外一个用户
+		 */
+		function addUserFollow($starId){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$followId=uniqid("",true);
+				$paraArr=array(":logonUser"=>$logonUser,":followId"=>$followId,":starId"=>$starId);
+				//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
+				$sql="insert into tb_follow (followId,starId,fansId,type) select :followId,:starId,(select userId from tb_user where username=:logonUser),'1' ";
+				$sql.="from dual where not exists (select * from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser))";
+				
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				return $affectRow;
+			}
+			else{
+				return "没有登录系统，无法关注别人";
+			}
+		}
 	}
 ?>

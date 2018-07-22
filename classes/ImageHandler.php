@@ -17,6 +17,7 @@
 			//返回的地址是html页面对应的地址
 			return $newPath;
 		}
+		
 	}
 	
 	$imageHandler=new ImageHandler();

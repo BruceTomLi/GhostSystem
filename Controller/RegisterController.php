@@ -11,7 +11,7 @@
 		/**
 		 * 执行注册操作，调用User类中的注册方法
 		 */
-		private function register(){
+		public function register(){
 			$username=$_POST['username']??null;
 			$password=$_POST['password']??null;
 			$email=$_POST['email']??null;
@@ -22,16 +22,15 @@
 			$oneWord=$_POST['oneWord']??null;
 			$heading=$_POST['heading']??null;
 			
-			$result=$this->user->register($username, $password, $email, $sex, $job,$province, $city, $oneWord,$heading);
-			if($result){
-				return 1;
-			}
-			return 0;
+			$affectRow=$this->user->register($username, $password, $email, $sex, $job,$province, $city, $oneWord,$heading);
+			$resultArr=array("affectRow"=>$affectRow);
+			$result=json_encode($resultArr);
+			return $result;
 		}
 		/**
 		 * 执行检测用户名是否重复操作，调用User类中的isUsernameRepeat方法
 		 */
-		private function chkUsername(){
+		public function chkUsername(){
 			$username=$_GET['username']??null;
 			$result=$this->user->isUsernameRepeat($username)==true?1:0;
 			return $result;
@@ -39,7 +38,7 @@
 		/**
 		 * 检测用户邮箱是否重复，调用User类中的isEmailRepeat方法
 		 */
-		private function chkEmail(){
+		public function chkEmail(){
 			$email=$_GET['email']??null;
 			$result=$this->user->isEmailRepeat($email)==true?1:0;
 			return $result;
@@ -63,7 +62,7 @@
 			// }
 		// }
 		
-		private function getJobList(){
+		public function getJobList(){
 			$jobLists = $this->user->getJobList();
 			//print_r($jobList);
 			/*foreach ($jobLists  as $key => $value) {
@@ -85,7 +84,7 @@
 		/**
 		 * 加载省份列表
 		 */
-		private function getProvinceList(){
+		public function getProvinceList(){
 			$provinceLists = $this->user->getProvinceList();
 			/*foreach ($provinceLists  as $key => $value) {
 				foreach($value as $key2 => $value2) {
@@ -102,7 +101,7 @@
 		/**
 		 * 加载城市列表
 		 */
-		private function getCityList(){
+		public function getCityList(){
 			$province = $_GET['province'];
 			//$province = "广东省";
 			$cityLists=$this->user->getCityList($province);
@@ -125,7 +124,7 @@
 		/**
 		 * 检测从前端的请求类型，选择适当的方法相应
 		 */
-		function selectAction(){
+		public function selectAction(){
 			if(isset($_POST['action']) || isset($_GET['action'])){
 				if(isset($_GET['action']) && $_GET['action']=="chkUsername"){
 					return $this->chkUsername();

@@ -4,13 +4,13 @@
 		<meta charset="UTF-8">
 		<title>管理个人设置</title>
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
-		<link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-		<link href="../bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" type="text/css">		
+		<link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">			
 		<script src="../js/jquery-1.9.1.js"></script>
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
 		<link href="../css/manage.css" rel="stylesheet" type="text/css">
 		<link href="../css/manageSelf.css" rel="stylesheet" type="text/css">
 		<script src="../js/manage.js"></script>		
+		<script src="../js/SelfSetting.js"></script>
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -39,19 +39,13 @@
 						      		<span id="emailChk"></span>
 						    	</div>
 						  	</div>
-							<div class="control-group">
-								<label class="control-label" for="inputPassword">密码</label>
-							    <div class="controls">
-							    	<input type="password" id="inputPassword" placeholder="密码">
-							    	<span id="passwordChk"></span>
-							    </div>
-							</div>
+							
 						  	<div class="moreForm">
 							    <div class="control-group">
 							    	<label class="control-label" for="inputSex">性别</label>
 							    	<div class="controls selectSex">
 							    		<label class="radio inline">
-										  <input type="radio" name="sexRadios" id="optionsRadios1" value="man" checked>
+										  <input type="radio" name="sexRadios" id="optionsRadios1" value="man">
 										  男
 										</label>
 										<label class="radio inline">
@@ -89,27 +83,86 @@
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputUserRole">用户角色</label>
 						    	<div class="controls">
-						      		<select id="roles" multiple="multiple">
-							    		<!--<option value="city">请选择城市</option>-->
-							    	</select>
-							    	<span id="selectUserRoles"></span>
+						      		<p id="inputUserRole">这里将会加载用户角色，并且用逗号分隔</p>
 						    	</div>
-						  	</div>
+						  	</div>						  	
 							<div class="control-group">
 							    <div class="controls">
-							      	<button type="submit" class="btn btn-info" id="changeUserBtn">修改</button>
-							      	<!--<button type="submit" class="btn btn-warning" id="cancleBtn">取消</button>-->
+							      	<button class="btn btn-info" id="changeUserBtn">修改信息</button>
+							      	<button class="btn-link btn-warning" id="changeHeadingBtn">修改头像</button>
+							      	<button class="btn-link btn-warning" id="changePasswordBtn">修改密码</button>
 							      	<input type="hidden" id="isNameOk" value="false"/>
 							      	<input type="hidden" id="isEmailOk" value="false"/>
-							      	<input type="hidden" id="isPwdOk" value="false"/>
-							      	<span id="regChk"></span>
 							    </div>
 							</div>
 						</div>
 						<hr>	
 					</div>						
 				</div>
+				
+				<div class="span12" id="changeHeadingDiv">
+					<div class="row-fluid mainContent">
+						<div class="form-horizontal changePwdForm">
+							<div class="formTitle">
+								<legend>修改我的头像</legend>
+							</div>
+							<div class="control-group">
+						  		<label class="control-label" for="inputUserHeading">用户头像</label>
+						    	<div class="controls">
+						      		<input type="file" id="inputUserHeading" name="heading" /><br>
+						      		<img id="userHeadingImg" src="../UploadImages/fishing.jpg" />
+						    	</div>
+						  	</div>
+							
+							<div class="control-group">
+							    <div class="controls">
+							    	<button class="btn btn-info" id="submitChangeHeadingBtn">修改</button>
+									<button class="btn btn-warning" id="cancelChangeHeadingBtn">取消</button>
+							    </div>	
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="span12" id="changePwdDiv">
+					<div class="row-fluid mainContent">
+						<div class="form-horizontal changePwdForm">
+							<div class="formTitle">
+								<legend>修改我的密码</legend>
+							</div>
+							<div class="control-group">
+								<label class="control-label" for="inputOldPassword">旧密码</label>
+							    <div class="controls">
+							    	<input type="password" id="inputOldPassword" placeholder="旧密码">
+							    	<span id="oldPasswordChk"></span>
+							    </div>	
+							</div>
+							<div class="control-group">
+								<label class="control-label" for="inputNewPassword">新密码</label>
+							    <div class="controls">
+							    	<input type="password" id="inputNewPassword" placeholder="新密码">
+							    	<span id="newPasswordChk"></span>
+							    </div>	
+							</div>
+							<div class="control-group">
+								<label class="control-label" for="inputPasswordAgain">确认密码</label>
+							    <div class="controls">
+							    	<input type="password" id="inputPasswordAgain" placeholder="确认密码">
+							    	<span id="passwordAgainChk"></span>
+							    </div>	
+							</div>
+							<div class="control-group">
+							    <div class="controls">
+							    	<button class="btn btn-info" id="submitChangePasswordBtn">修改</button>
+									<button class="btn btn-warning" id="cancelChangePasswordBtn">取消</button>
+									<input type="hidden" id="isPwdOk" value="false"/>
+							    </div>	
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
+			
 			<footer id="manageFooter">
 				<?php include(__DIR__."/../View/manageFooter.php"); ?>
 			</footer>	

@@ -11,7 +11,9 @@
 		}
 		
 		public function isUserLogon(){
-			return $this->user->isUserLogon()?1:0;
+			$isUserLogon=$this->user->isUserLogon()?1:0;
+			$resultArr=array("isUserLogon"=>$isUserLogon);
+			return json_encode($resultArr);
 		}
 		
 		public function userLogonInfo(){
@@ -50,6 +52,14 @@
 			return $result;
 		}
 		
+		public function enableSelfQuestion(){
+			$questionId=$_REQUEST['questionId'];
+			$affectRow=$this->user->enableSelfQuestion($questionId);
+			$resultArr=array("affectRow"=>$affectRow);
+			$result=json_encode($resultArr);
+			return $result;
+		}
+		
 		public function getAllQuestion(){
 			$result=json_encode($this->questionManager->getAllQuestionList());
 			return $result;
@@ -63,8 +73,10 @@
 			//需要获取问题详情，以及问题相关的评论
 			$questionDetails=$this->questionManager->getQuestionDetails($questionId);
 			$questionComments=$this->user->getCommentsForQuestion($questionId);
+			$hasUserFollowedQuestion=$this->user->hasUserFollowed($questionId);
 			$commentCount=count($questionComments);
-			$resultArr=array("questionDetails"=>$questionDetails,"questionComments"=>$questionComments,"commentCount"=>$commentCount);
+			$resultArr=array("questionDetails"=>$questionDetails,"questionComments"=>$questionComments,
+				"hasUserFollowedQuestion"=>$hasUserFollowedQuestion,"commentCount"=>$commentCount);
 			$result=json_encode($resultArr);
 			return $result;
 		}
@@ -78,7 +90,7 @@
 			$result="";
 			if($this->user->isUserLogon()){
 				$resultArr=$this->user->commentQuestion($questionId, $content);
-				array_push($resultArr,array("isLogon"=>"true"));
+				$resultArr["isLogon"]="true";
 				$result=json_encode($resultArr);
 			}
 			else{
@@ -117,14 +129,14 @@
 		 * 回复一条评论
 		 */
 		public function replyComment(){			
-			$commentId=$_REQUEST['commentId'];
-			$fatherReplyId=$_REQUEST['fatherReplyId'];
-			$content=$_REQUEST['content'];
+			$commentId=$_REQUEST['commentId']??"";
+			$fatherReplyId=$_REQUEST['fatherReplyId']??"";
+			$content=$_REQUEST['content']??"";
 			$result="";
 			if($this->user->isUserLogon()){
 				//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
 				$result=$this->user->createReplyForComment($fatherReplyId,$commentId, $content);
-				array_push($result,array("isLogon"=>"true"));
+				$result["isLogon"]="true";
 				$result=json_encode($result);
 			}
 			else{
@@ -144,6 +156,7 @@
 			if($this->user->isUserLogon()){
 				//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
 				$result=$this->user->createReplyForReply($fatherReplyId,$commentId, $content);
+				$result["isLogon"]="true";
 				$result=json_encode($result);
 			}
 			else{
@@ -173,6 +186,39 @@
 			return $result;
 		}
 		
+		/**
+		 * 用户关注一个问题
+		 */
+		public function addFollow(){
+			$starId=$_REQUEST['starId'];
+			$followType=$_REQUEST['followType']??"unknown";
+			$affectRow=$this->user->addFollow($starId,$followType);
+			$resultArr=array("affectRow"=>$affectRow);
+			$result=json_encode($resultArr);
+			return $result;
+		}
+		
+		/**
+		 * 用户取消关注一个问题
+		 */
+		public function deleteFollow(){
+			$starId=$_REQUEST['starId'];
+			$affectRow=$this->user->deleteFollow($starId);
+			$resultArr=array("affectRow"=>$affectRow);
+			$result=json_encode($resultArr);
+			return $result;
+		}
+		
+		/**
+		 * 通过userId获取用户基本信息
+		 */
+		public function getUserBaseInfoByUserId(){
+			$userId=$_REQUEST['userId']??"";
+			$personalInfo=$this->user->getUserBaseInfoByUserId($userId);
+			return json_encode($personalInfo);
+		}
+		
+		
 		public function selectAction(){
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){
 				return $this->userLogonInfo();
@@ -191,6 +237,9 @@
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfQuestion"){
 				return $this->disableSelfQuestion();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableSelfQuestion"){
+				return $this->enableSelfQuestion();
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllQuestion"){
 				return $this->getAllQuestion();
@@ -219,11 +268,19 @@
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForReply"){
 				return $this->disableReplyForReply();
 			}
-			return "没有发送合适的请求";
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="addFollow"){
+				return $this->addFollow();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteFollow"){
+				return $this->deleteFollow();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="isUserLogon"){
+				return $this->isUserLogon();
+			}
 		}
 	}
 	
 	$questionController=new QuestionController();
 	echo $questionController->selectAction();
-	// echo $questionController->replyComment();
+	//echo $questionController->replyComment();
 ?>

@@ -18,7 +18,7 @@
 		<link href="../css/question.css" rel="stylesheet" type="text/css">
 		<script src="../js/loadInitEditor.js"></script>
 		<script src="../js/manageSelf.js"></script>
-		<script src="../js/manageSelfQuestion.js"></script>
+		<script src="../js/SelfQuestion.js"></script>
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -42,39 +42,39 @@
 					</div>
 					<div class="selfTableDiv">
 						<table class="table selfTable">		
-						<thead>
-							<tr>
-								<th>提问者</th>
-								<th>提问日期</th>
-								<th>问题类型</th>
-								<th>问题内容</th>
-								<th>详情</th>
-								<th>删除</th>
-							</tr>							
-						</thead>
-						<tbody>
-							<tr>
-								<td>
-									山外山
-								</td>
-								<td>
-									2018/7/9
-								</td>
-								<td>
-									IT类
-								</td>
-								<td>
-									软件必须修复所有bug之后才开始发布吗？
-								</td>
-								<td>
-									<button class="btn-link detailsBtn">查看详情</button>
-								</td>								
-								<td>
-									<button class="btn-link">删除</button>
-								</td>
-							</tr>							
-						</tbody>
-					</table>
+							<thead>
+								<tr>
+									<th>提问者</th>
+									<th>提问日期</th>
+									<th>问题类型</th>
+									<th>问题内容</th>
+									<th>详情</th>
+									<th>启用/禁用</th>
+								</tr>							
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										山外山
+									</td>
+									<td>
+										2018/7/9
+									</td>
+									<td>
+										IT类
+									</td>
+									<td>
+										软件必须修复所有bug之后才开始发布吗？
+									</td>
+									<td>
+										<button class="btn-link detailsBtn">查看详情</button>
+									</td>								
+									<td>
+										<button class="btn-link" value="问题Id">启用/禁用</button>
+									</td>
+								</tr>							
+							</tbody>
+						</table>
 					</div>
 					<div class="pagination">
 						<ul>
@@ -107,62 +107,16 @@
 			
 			<div class="row-fluid detailsDiv">
 				<div class="span12 mainContent">
-					<div class="row-fluid ">
-						<ul class="nav nav-tabs pull-right">
-							<li>
-								<button class="btn-link listBtn">返回问题列表</button>
-							</li>
-						</ul>
-						<article class="articleDetail">
-							<section class="questionDetails">
-								<h4>软件必须修复所有bug之后才开始发布吗？</h4>
-								<p><span>提问者：山外山</span></p>
-							</section>			
-							<hr>				
-							<section class="questionAnswers">
-								<h4>2个回复</h4>
-								<hr>
-								<ul>
-									<li>
-										<ul>
-											<li>
-												<span>天外天：</span>
-												<span>
-													不是，软件的bug往往难以全部修复，可以在容许几个不影响主要业务的bug
-												的情况下让软件运行下去
-												</span>
-											</li>
-											<li>
-												<span>水中水&nbsp;回复&nbsp;天外天：</span>
-												<span>
-													是的，我也觉得可以在软件没有修复所有bug的时候上线
-												</span>
-											</li>
-										</ul>
-									</li>	
-									<li>
-										<ul>
-											<li>
-												<span>天外天：</span>
-												<span>
-													不是，软件的bug往往难以全部修复，可以在容许几个不影响主要业务的bug
-												的情况下让软件运行下去
-												</span>
-											</li>
-											<li>
-												<span>水中水&nbsp;回复&nbsp;天外天：</span>
-												<span>
-													是的，我也觉得可以在软件没有修复所有bug的时候上线
-												</span>
-											</li>
-										</ul>
-									</li>	
-								</ul>	
-							</section>
-						</article>
-					</div>						
+					<ul class="nav nav-tabs pull-right">
+						<li>
+							<button class="btn-link" id="returnListBtn">返回问题列表</button>
+						</li>
+					</ul>
+					<?php include(__DIR__."/../View/questionDetails.php"); ?>
 				</div>
 			</div>
+			
+			
 			
 			<div class="row-fluid createDiv">
 				<div class="span12 mainContent">

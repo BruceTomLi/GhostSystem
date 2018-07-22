@@ -128,8 +128,8 @@ function chkInputUserName(){
 		$('#userNameChk').text("用户名不能为空").removeClass().addClass("chkError");	
 		isNameOk=false;
 	}
-	else if(username.length<2 || username.length>8){
-		$('#userNameChk').text("2<用户名长度<8").removeClass().addClass("chkError");	
+	else if(username.length<3 || username.length>20){
+		$('#userNameChk').text("3<用户名长度<20").removeClass().addClass("chkError");	
 		isNameOk=false;
 	}
 	else{
@@ -334,13 +334,14 @@ function register(){
 		{action:"register",username:username,email:email,password:password,sex:sex,
 			job:job,province:province,city:city,oneWord:oneWord,heading:heading},
 		function(data){
-			data=$.trim(data);
-			if(data==1){
+			var result=$.trim(data);
+			result=$.parseJSON(result);
+			if(result.affectRow==1){
 				alert("注册成功,请登录");
-				location="login.html";
+				location="login.php";
 			}
 			else{
-				alert("注册失败");
+				alert(result.affectRow);
 				chkAllInput();
 			}
 		}

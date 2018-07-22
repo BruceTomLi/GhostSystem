@@ -1,6 +1,10 @@
 <?php
 	require_once(__DIR__."/../classes/SessionDBC.php");
 ?>
+<link rel="stylesheet" type="text/css" href="../css/questionHeader.css" />
+<script src="../js/questionHeader.js"></script>
+<script src="../js/checkUserLogon.js"></script>
+
 <div  id="questionHeaderDetails">
 	<div class="navbar">
 		<div class="navbar-inner defaultBootstrapMenu">
@@ -32,7 +36,7 @@
 						</ul>
 						<?php
 							if(isset($_SESSION['username'])){
-								echo "<span id='welcomeInfo'>欢迎你，{$_SESSION['username']}</span>";
+								echo "<span id='#welcomeInfo'>欢迎你，{$_SESSION['username']}</span>";
 								echo "<a class='btn btn-info' href='../manage/selfSetting.php'>设置</a>";
 								echo "<button id='logoutBtn' onClick='logout()' class='btn btn-warning'>注销</button>";
 							}
@@ -45,9 +49,6 @@
 				</div>								
 			</div>
 		</div>		
-		
-		<link rel="stylesheet" type="text/css" href="../css/questionHeader.css" />
-		<script src="../js/questionHeader.js"></script>
 	</div>		
 </div>
 

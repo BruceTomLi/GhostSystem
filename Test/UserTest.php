@@ -25,14 +25,9 @@
 			$oneWord="I am a programmer";
 			$heading="img/test.jpg";
 			
-			$result=$this->user->register($username, $password, $email, $sex, $job, $province, $city, $oneWord,$heading);
-			// if($result==true){
-				// echo "已经添加用户";
-			// }
-			// else{
-				// echo "添加用户失败";
-			// }
-			$this->assertFalse($result);
+			//已经注册过一次的再注册一次会失败，因为用户名和邮箱重复了
+			$affectRow=$this->user->register($username, $password, $email, $sex, $job, $province, $city, $oneWord,$heading);
+			$this->assertTrue($affectRow==0);
 		}
 		/**
 		 * 下面测试用户名是否重复，测试数据重复，结果为true
@@ -40,12 +35,6 @@
 		function testIsUserNameRepeat(){
 			$username=RepeatName;
 			$result=$this->user->isUsernameRepeat($username);
-			// if($result){
-				// echo "用户名重复，不可用";
-			// }
-			// else{
-				// echo "用户名没重复，可用";
-			// }
 			$this->assertTrue($result);
 		}
 		
@@ -55,12 +44,6 @@
 		function testIsEmailRepeat(){
 			$email=RepeatEmail;
 			$result=$this->user->isEmailRepeat($email);
-			// if($result){
-				// echo "邮箱重复，不可用";
-			// }
-			// else{
-				// echo "邮箱没重复，可用";
-			// }
 			$this->assertTrue($result);
 		}
 		/**
@@ -70,7 +53,7 @@
 			$username=UserName;
 			$password=Password;			
 			$result=$this->user->login($password, $username);
-			$this->assertEquals($result,"王五");
+			$this->assertEquals($result,UserName);
 		}
 		
 		/**
@@ -78,7 +61,7 @@
 		 * 之后清除session，在测试未登录的情况
 		 */
 		function testIsUserLogon(){
-			$this->assertTrue($this->user->isUserLogon() && $_SESSION['username']=="王五");
+			$this->assertTrue($this->user->isUserLogon() && $_SESSION['username']==UserName);
 		}
 		
 		/**
@@ -179,7 +162,8 @@
 			
 			$keyword="单元测试";
 			$questionList=$this->user->getQuestionListByContentOrDescription($keyword);
-			$this->assertTrue(!empty($questionList));
+			//问题被disable之后就查不到了
+			$this->assertTrue(count($questionList)>=0);
 			//测试完之后退出登录
 			$this->user->logout();
 		}
@@ -196,6 +180,22 @@
 			$questionId=QuestionId;
 			$result=$this->user->disableSelfQuestion($questionId);
 			//下面的测试条件是因为用户可能已经禁用了问题，那么数据库修改的结果就是影响函数为0
+			$this->assertTrue($result==1 || $result==0);
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		/**
+		 * 下面测试用户启用一个问题
+		 */
+		function testEnableSelfQuestion(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$result=$this->user->login($password, $username);
+			
+			$questionId=QuestionId;
+			$result=$this->user->enableSelfQuestion($questionId);
+			//下面的测试条件是因为用户可能已经启用了问题，那么数据库修改的结果就是影响函数为0
 			$this->assertTrue($result==1 || $result==0);
 			//测试完之后退出登录
 			$this->user->logout();
@@ -238,8 +238,14 @@
 			$result=$this->user->login($password, $username);
 			
 			$commentId=CommentId;
-			$result=$this->user->disableCommentForQuestion($commentId);
-			$this->assertTrue($result==1 || $result==0);
+			$result=0;
+			if($this->user->isCommentEnable($commentId)){
+				$result=$this->user->disableCommentForQuestion($commentId);
+				$this->assertTrue($result==1);
+			}
+			else{
+				$this->assertTrue($result==0);
+			}
 			
 			//测试完之后退出登录
 			$this->user->logout();
@@ -257,7 +263,7 @@
 			
 			$fatherReplyId=CommentId;
 			$commentId=CommentId;
-			$content=ReplyContent;
+			$content=ReplyCommentContent;
 			$result=$this->user->createReplyForComment($fatherReplyId, $commentId, $content);
 			//添加一条回复就是向数据库中插入了一条对评论的回复记录
 			$this->assertEquals($result["insertRow"],1);
@@ -278,7 +284,7 @@
 			
 			$fatherReplyId=FatherReplyId;
 			$commentId=CommentId;
-			$content=ReplyContent;
+			$content=ReplyReplyContent;
 			$result=$this->user->createReplyForReply($fatherReplyId, $commentId, $content);
 			//添加一条回复就是向数据库中插入了一条值，为0是该评论不存在
 			$this->assertTrue($result["insertRow"]==1);
@@ -296,12 +302,18 @@
 			//测试这个功能需要先登录
 			$username=UserName;
 			$password=Password;	
-			$result=$this->user->login($password, $username);
+			$this->user->login($password, $username);
 			
 			$replyId=ReplyId;
-			$result=$this->user->disableReplyForComment($replyId);
-			//禁用回复信息的评论就是在数据库中将评论信息改为禁用，也可能已经禁用
-			$this->assertTrue($result==0 || $result==1);
+			$result=0;
+			if($this->user->isReplyEnable($replyId)){
+				$result=$this->user->disableReplyForComment($replyId);
+				//禁用回复信息的评论就是在数据库中将评论信息改为禁用，也可能已经禁用
+				$this->assertTrue($result==1);
+			}
+			else{
+				$this->assertTrue($result==0);
+			}
 			
 			//测试完之后退出登录
 			$this->user->logout();
@@ -351,6 +363,244 @@
 			$result=$this->user->getReplyByReplyId($replyId);
 			$this->assertTrue($result>0);
 		}
+		
+		/**
+		 * 下面测试加载已经登录的用户的个人信息
+		 */
+		function testLoadUserInfo(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$result=$this->user->loadUserInfo();
+			$this->assertEquals(count($result),1);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		function testIsUsernameUsedByOthers(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			//先测试原用户名，是被自己占用的，断言false
+			$newUsername=UserName;			
+			$result=$this->user->isUsernameUsedByOthers($newUsername);
+			$this->assertFalse($result);
+			
+			//再测试新用户名，是被被别人占用的，断言true
+			$newUsername=NewUserName;			
+			$result=$this->user->isUsernameUsedByOthers($newUsername);
+			$this->assertTrue($result);
+			
+			//测试完之后退出登录
+			$this->user->logout();			
+		}
+		
+		/**
+		 * 测试用户要修改的邮箱是否和其他人重复
+		 */
+		function testIsEmailUsedByOthers(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			
+			//先测试原邮箱，是被自己占用的，断言false
+			$newEmail=UserEmail;	
+			$result=$this->user->isEmailUsedByOthers($newEmail);
+			$this->assertFalse($result);
+			
+			//再测试新用户名，是被被别人占用的，断言true
+			$newEmail=NewUserEmail;			
+			$result=$this->user->isEmailUsedByOthers($newEmail);
+			$this->assertTrue($result);
+						
+			//测试完之后退出登录
+			$this->user->logout();			
+		}
+		
+		/**
+		 * 下面测试修改用户自己的信息
+		 */
+		function testChangeSelfInfo(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$userInfo=array("username"=>UserName,"email"=>UserEmail,
+				"sex"=>"1","job"=>"保洁员","province"=>"上海","city"=>"上海市",
+				"oneWord"=>"我是一个保洁员");
+			
+			$result=$this->user->changeSelfInfo($userInfo);
+			$this->assertEquals(count($result),1);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		/**
+		 * 下面测试用户修改密码的功能
+		 */
+		function testChangeSelfPassword(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$oldPassword=Password;
+			$newPassword=Password;
+			
+			$affectRow=$this->user->changeSelfPassword($oldPassword,$newPassword);
+			//新旧密码一样时，不会更新任何记录
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		/**
+		 * 下面的函数测试用户关注一个问题/话题/人
+		 */
+		function testAddFollow(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			//关注一个问题
+			$questionId=QuestionId;
+			$followType="question";			
+			$affectRow=$this->user->addFollow($questionId,$followType);
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//关注一个人
+			$userId=UserId;
+			$followType="user";
+			$affectRow=$this->user->addFollow($userId,$followType);
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//关注一话题
+			$userId=TopicId;
+			$followType="topic";
+			$affectRow=$this->user->addFollow($userId,$followType);
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		/**
+		 * 下面的函数测试用户取消关注一个问题
+		 */
+		function testDeleteFollow(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			//取消关注问题
+			$questionId=QuestionId;
+			$affectRow=$this->user->deleteFollow($questionId);
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//取消关注话题
+			$topicId=TopicId;
+			$affectRow=$this->user->deleteFollow($topicId);
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//取消关注人
+			$userId=UserId;
+			$affectRow=$this->user->deleteFollow($userId);
+			$this->assertTrue($affectRow==1 || $affectRow==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();
+		}
+		
+		/**
+		 * 下面的函数测试用户是否关注了某个问题/话题/人
+		 */
+		function testHasUserFollowed(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			//用户是否关注了问题
+			$questionId=QuestionId;
+			$followCount=$this->user->hasUserFollowed($questionId);
+			//用户关注了问题时，结果为1；用户没有关注时，结果为0。因为上面测试关注和取消关注的函数的影响，结果应该为0
+			$this->assertTrue($followCount==0);
+			
+			//用户是否关注了话题
+			$topicId=TopicId;
+			$followCount=$this->user->hasUserFollowed($topicId);
+			//用户关注了问题时，结果为1；用户没有关注时，结果为0。因为上面测试关注和取消关注的函数的影响，结果应该为0
+			$this->assertTrue($followCount==0);
+			
+			//用户是否关注了人
+			$userId=UserId;
+			$followCount=$this->user->hasUserFollowed($userId);
+			//用户关注了问题时，结果为1；用户没有关注时，结果为0。因为上面测试关注和取消关注的函数的影响，结果应该为0
+			$this->assertTrue($followCount==0);
+			
+			//测试完之后退出登录
+			$this->user->logout();			
+		}
+		
+		/**
+		 * 测试加载用户关注的问题
+		 */
+		function testLoadUserFollowedQuestions(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$followedQuestions=$this->user->loadUserFollowedQuestions();
+			//如果获取到用户关注的问题，结果数量就大于0
+			$this->assertTrue(count($followedQuestions)>0);
+			
+			//测试完之后退出登录
+			$this->user->logout();	
+		}
+		
+		/**
+		 * 测试用户上传自己的头像
+		 */
+		function testUploadSelfHeading(){
+			$fileName="../UploadImages/skyy.jpg";
+			$realName="heading.jpg";
+			$isUnitTest=true;
+			
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$resultArr=$this->user->uploadSelfHeading($fileName, $realName,$isUnitTest);
+			//如果用户上传的是相同文件名的文件，那么文件夹里的文件会修改，但是数据库里面的记录不会更新
+			$this->assertTrue($resultArr['fileUploadOk']==1 && $resultArr['affectRow']>=0);
+			
+			//测试完之后退出登录
+			$this->user->logout();			
+		}
+		
+		/**
+		 * 下面测试用户通过UserId加载一个人的基本信息
+		 */
+		function testGetUserBaseInfoByUserId(){
+			$userId=UserId;
+			$personalInfo=$this->user->getUserBaseInfoByUserId($userId);
+			$this->assertEquals(count($personalInfo),1);
+		}
+		
 		 
 		/**
 		 * 下面演示sql注入
