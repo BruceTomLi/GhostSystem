@@ -73,6 +73,7 @@
 			//需要获取问题详情，以及问题相关的评论
 			$questionDetails=$this->questionManager->getQuestionDetails($questionId);
 			$questionComments=$this->user->getCommentsForQuestion($questionId);
+			//获取用户是否关注了该问题
 			$hasUserFollowedQuestion=$this->user->hasUserFollowed($questionId);
 			$commentCount=count($questionComments);
 			$resultArr=array("questionDetails"=>$questionDetails,"questionComments"=>$questionComments,
@@ -207,17 +208,7 @@
 			$resultArr=array("affectRow"=>$affectRow);
 			$result=json_encode($resultArr);
 			return $result;
-		}
-		
-		/**
-		 * 通过userId获取用户基本信息
-		 */
-		public function getUserBaseInfoByUserId(){
-			$userId=$_REQUEST['userId']??"";
-			$personalInfo=$this->user->getUserBaseInfoByUserId($userId);
-			return json_encode($personalInfo);
-		}
-		
+		}		
 		
 		public function selectAction(){
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){

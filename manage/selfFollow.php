@@ -28,11 +28,13 @@
 					</div>
 					<h4>关注的人</h4>
 					<hr>
-					<div class="selfTableDiv hasFollowedStar">
+					<div class="selfTableDiv hasFollowedUser">
 						<table class="table selfTable">		
 							<thead>
 								<tr>
-									<th>明星名称</th>
+									<th>人物称呼</th>
+									<th>性别</th>
+									<th>邮箱</th>
 									<th>人物详情</th>
 									<th>取消关注</th>
 								</tr>							
@@ -41,6 +43,12 @@
 								<tr>
 									<td>
 										山外山
+									</td>
+									<td>
+										男
+									</td>
+									<td>
+										1401717460@qq.com
 									</td>
 									<td>
 										<button class="btn-link detailsBtn">人物详情</button>

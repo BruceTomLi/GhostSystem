@@ -10,6 +10,7 @@
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
 		<link href="../css/manageSelf.css" rel="stylesheet" type="text/css">
 		<script src="../js/manage.js"></script>
+		<script src="../js/SelfFans.js"></script>
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -26,20 +27,28 @@
 						</form>						
 					</div>
 					<div class="selfTableDiv">
-						<table class="table selfTable">		
+						<table class="table" id="fansTable">		
 							<thead>
 								<tr>
-									<th>粉丝名称</th>
-									<th>人物详情</th>
+									<th>粉丝头像</th>
+									<th>粉丝称呼</th>
+									<th>粉丝性别</th>
+									<th>粉丝邮箱</th>
 								</tr>							
 							</thead>
 							<tbody>
 								<tr>
 									<td>
-										山外山
+										<img src="../UploadImages/sheep.jpg">
 									</td>
 									<td>
-										<button class="btn-link detailsBtn">人物详情</button>
+										<a href="../forum/person.php?userId=11" target="_blank">王五</a> 
+									</td>
+									<td>
+										男 
+									</td>
+									<td>
+										wangwu@123.com
 									</td>
 								</tr>							
 							</tbody>

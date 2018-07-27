@@ -1,6 +1,5 @@
 $(function(){
 	//将菜单项的当前页菜单增加选中样式
-	$("#menuUl>li>a[href='selfQuestion.php']").siblings().parent().removeClass();
 	$("#menuUl>li>a[href='selfQuestion.php']").parent().addClass("active");
 	
 	$("#createQuestionBtn").on("click",function(){

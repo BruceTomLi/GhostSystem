@@ -762,9 +762,9 @@
 				global $pdo;
 				$username=$_SESSION['username'];
 				$paraArr=array(":logonUser"=>$username);
-				$sql="select :logonUser as fans,tq.* from tb_question tq where questionId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
-				$followedQuestions=$pdo->getQueryResult($sql,$paraArr);
-				return $followedQuestions;
+				$sql="select userId,username,sex,email from tb_user where userId in (select starId from tb_follow where fansId in(select userId from tb_user where username=:logonUser))";
+				$followedUsers=$pdo->getQueryResult($sql,$paraArr);
+				return $followedUsers;
 			}
 			else{
 				return "用户未登录系统，无法获取相关信息";
@@ -854,7 +854,7 @@
 		function getUserBaseInfoByUserId($userId){
 			global $pdo;
 			$paraArr=array("userId"=>$userId);
-			$sql="select userId,username,email,sex,heading from tb_user where userId=:userId";
+			$sql="select userId,username,email,oneWord,sex,heading from tb_user where userId=:userId";
 			$personalInfo=$pdo->getQueryResult($sql,$paraArr);
 			if(count($personalInfo)>0){
 				$resultArr=array("personalInfo"=>$personalInfo);
@@ -883,6 +883,24 @@
 			}
 			else{
 				return "没有登录系统，无法关注别人";
+			}
+		}
+		
+		/**
+		 * 加载用户的粉丝
+		 */
+		function loadUserFans(){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$paraArr=array(":logonUser"=>$logonUser);
+				$sql="select * from tb_user where userId in(select fansId from tb_follow where starId=(select userId from tb_user where username=:logonUser))";
+				
+				$fans=$pdo->getQueryResult($sql,$paraArr);
+				return $fans;
+			}
+			else{
+				return "没有登录系统，无法获取相关信息";
 			}
 		}
 	}

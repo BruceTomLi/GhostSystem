@@ -1,17 +1,6 @@
 // 由于需要在几个不同的地方显示问题详情,现在把它抽象到
 //questionDetails.php 和questionDetails.js 和questionDetails.css 三个文件中
-$(function(){
-	//点击“返回问题列表时”返回
-	$("#questionListBtn").on("click",function(){
-		$(".detailsDiv").hide();
-		$(".questionDetailsDiv").hide();
-		$(".queryDiv").show();
-		$(".editDiv").hide();
-		$(".createDiv").hide();
-		//为了让取消问题关注的用户看到取消后的效果，这里使用一个页面刷新
-		window.location.reload();
-	});
-	
+$(function(){	
 	//页面加载时检测用户是否登录了系统
 	isUserLogon();
 });

@@ -1,6 +1,5 @@
 $(function(){
 	//将菜单项的当前页菜单增加选中样式
-	$("#menuUl>li>a[href='selfSetting.php']").siblings().parent().removeClass();
 	$("#menuUl>li>a[href='selfSetting.php']").parent().addClass("active");
 	
 	//显示或者隐藏修改密码
@@ -40,9 +39,9 @@ $(function(){
 		uploadSelfHeading();
 	});
 	
+	//加载完用户基本信息之后加载工作岗位信息和省份信息
 	getJobList();
 	getProvinceList();
-	
 	//用户单击城市选项时，加载省份对应的城市信息
 	$("#province").on("click",function(){
 		getCityList();
@@ -79,7 +78,6 @@ function loadUserInfo(){
 					//用户角色这个地方应该加载所有的角色，需要从tb_user表之外的其他表获得，这里我先暂且不加载
 					//用户角色是不能让用户自己修改的，所以直接将内容读取并显示出来
 					
-					//用户的头像也应该留一个地方显示和上传，这里需要加载，先暂且不加载
 					//将用户头像以路径形式保存在数据库中，并将图片保存在UploadImages/heading目录下面
 					$("#userHeadingImg").attr("src",value.heading);
 				});
@@ -335,7 +333,7 @@ function getProvinceList (){
 			data = $.trim(data);
 			data = $.parseJSON(data);
 			var provinceLists="";
-			if($('#inputJob').children().length<=1){
+			if($('#province').children().length<=1){
 				provinceLists=$('#province').html();
 			}
 			data.forEach(function(item,index) {

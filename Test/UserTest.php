@@ -572,6 +572,23 @@
 		}
 		
 		/**
+		 * 测试加载用户关注的人
+		 */
+		function testLoadUserFollowedUsers(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$followedUsers=$this->user->loadUserFollowedUsers();
+			//如果获取到用户关注的问题，结果数量就大于0
+			$this->assertTrue(count($followedUsers)>0);
+			
+			//测试完之后退出登录
+			$this->user->logout();	
+		}
+		
+		/**
 		 * 测试用户上传自己的头像
 		 */
 		function testUploadSelfHeading(){
@@ -599,6 +616,23 @@
 			$userId=UserId;
 			$personalInfo=$this->user->getUserBaseInfoByUserId($userId);
 			$this->assertEquals(count($personalInfo),1);
+		}
+		
+		/**
+		 * 下面测试加载用户的粉丝
+		 */
+		function testLoadUserFans(){
+			//测试这个功能需要先登录
+			$username=UserName;
+			$password=Password;	
+			$this->user->login($password, $username);
+			
+			$fans=$this->user->loadUserFans();
+			//如果用户上传的是相同文件名的文件，那么文件夹里的文件会修改，但是数据库里面的记录不会更新
+			$this->assertTrue(count($fans)>0);
+			
+			//测试完之后退出登录
+			$this->user->logout();	
 		}
 		
 		 

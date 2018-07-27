@@ -10,6 +10,8 @@
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
 		<link href="../css/manage.css" rel="stylesheet" type="text/css">
 		<script src="../js/manage.js"></script>
+		<script src="../js/authority.js"></script>
+		<link href="../css/authority.css" rel="stylesheet" type="text/css">
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -20,7 +22,7 @@
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
 					<div class="tableDiv">
-						<table class="table">		
+						<table class="table" id="authorityTable">		
 						<thead>
 							<tr>
 								<th>权限名</th>
@@ -71,22 +73,22 @@
 								<legend>编辑权限</legend>
 							</div>
 						  	<div class="control-group">
-						  		<label class="control-label" for="inputAuthorityName">权限名</label>
+						  		<label class="control-label" for="authorityName">权限名</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputAuthorityName" placeholder="权限名">
+							      	<p id="authorityName">权限名</p>
 							    </div>
 						  	</div>
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputAuthorityDescription">权限描述</label>
 						    	<div class="controls">
-						      		<input type="text" id="inputAuthorityDescription" placeholder="权限描述">
+						      		<textarea id="inputAuthorityDescription" placeholder="权限描述"></textarea>
 						    	</div>
 						  	</div>
 						  	
 							 <div class="control-group">
 							    <div class="controls">
-								    <button type="submit" class="btn btn-info" id="changeAuthorityBtn">修改</button>
-								    <button type="submit" class="btn btn-warning" id="changeAuthorityCancleBtn">取消</button>
+								    <button type="submit" class="btn btn-info" onclick="changeAuthorityInfo()" id="changeAuthorityBtn">修改</button>
+								    <button type="submit" class="btn btn-warning" onclick="cancelChangeAuthority()" id="changeAuthorityCancelBtn">取消</button>
 							    </div>
 							</div>
 						</div>
