@@ -8,7 +8,7 @@ function login(){
 			var loginInfo=$.trim(data);
 			loginInfo=$.parseJSON(loginInfo);
 			if(loginInfo.username!=""){
-				alert(`欢迎你，${loginInfo.username}`);
+				//alert(`欢迎你，${loginInfo.username}`);
 				location="forum/question.php";
 			}
 			else{

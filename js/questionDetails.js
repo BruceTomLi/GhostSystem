@@ -3,11 +3,14 @@
 $(function(){	
 	//页面加载时检测用户是否登录了系统
 	isUserLogon();
+	
+	//解析问题详情，是从hidden字段中获取的
+	getQuestionDetails();
 });
 
 /**
  * 获取用户是否登录了系统，在页面load的时候调用，如果登录了，就在html中写入一个hidden的标记元素
- * 以便chkUserLogonByWelcome()函数可以获取到相应值
+ * 以便checkUserLogon()函数可以获取到相应值
  */
 function isUserLogon(){
 	$.get(
@@ -25,10 +28,67 @@ function isUserLogon(){
 }
 
 /**
+ * 下面的函数从页面的hidden字段获取问题信息，然后进行解析，之后再动态修改html
+ */
+function getQuestionDetails(){
+	var result=$.trim($("#questionDetailsHidden").attr("value"));
+	result=$.parseJSON(result);
+	var questionList="";			
+	result.questionDetails.forEach(function(value,index){
+		questionList+="<h4>"+value.content+"</h4><hr>";
+		questionList+="<p><span>描述：</span>"+value.questionDescription+"</p>";
+		questionList+="<p><span>时间：</span><span>"+value.askDate+"</span></p>";
+		//问题是可用状态下显示添加评论
+		if(value.enable==1){
+			questionList+="<p><button class='btn-link' id='addCommentBtn' value='"+value.questionId+"' onClick='showCommentDiv(this)'>添加评论</button>";
+		}
+		//用户是否关注了问题，有为0和为1的情况，也有用户没登录的情况，用户没登录时不显示
+		if(result.hasUserFollowedQuestion==0){
+			questionList+="<button class='btn-link' id='addFollowBtn' value='"+value.questionId+"' onClick='addQuestionFollow(this)'>添加关注</button></p>";
+		}
+		if(result.hasUserFollowedQuestion==1){
+			questionList+="<button class='btn-link' id='deleteFollowBtn' value='"+value.questionId+"' onClick='deleteQuestionFollow(this)'>取消关注</button></p>";
+		}
+		else{
+			questionList+="</p>";
+		}
+		
+	});
+	$("#questionDetails").html(questionList);
+	
+	var questionAnswers="<h4><span id='commentCount'>"+result.commentCount+"</span>个回复</h4>";
+	questionAnswers+="<hr><ul>";
+	result.questionComments.forEach(function(value,index){
+		questionAnswers+="<li><ul><li>";
+		questionAnswers+="<span><a target='_blank' href='../forum/person.php?userId="+value.commenterId+"'>"+value.commenter+"</a>：</span>";
+		questionAnswers+="<span>"+value.content+"</span>";
+		if(value.isCommenter=="true"){//如果登录者是评论者，就加上删除按钮					
+			questionAnswers+="<button class='btn-link disableBtn' value='"+value.commentId+"' onClick='disableCommentForQuestion(this)'>删除</button>";
+		}
+		if(value.replyCount>0){
+			questionAnswers+="<button class='btn-link detailsBtn' value='"+value.commentId+"' onClick='getReplysForComment(this)'>";
+			questionAnswers+=value.replyCount+"条回复</button>";
+		}				
+		questionAnswers+="<button class='btn-link replyBtn' value='"+value.commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
+		questionAnswers+="<div class='replysForComment'></div></li></ul></li>";
+	});
+	questionAnswers+="</ul>";
+	$("#questionAnswers").html(questionAnswers);
+	
+	$(".detailsDiv").show();
+	$(".questionDetailsDiv").show();
+	$(".queryDiv").hide();
+	$(".editDiv").hide();
+	$(".createDiv").hide();
+}
+
+/**
  * 获取问题详情的函数
  * 需要通过元素的value传入questionId值，以便问题详情页可以显示问题的详细信息
+ * 下面的函数被注释掉，是因为我通过将questionId的值传到php页，调用方法直接加载了问题详情信息
+ * 这样做的目的是为了在需要显示问题详情的地方，只要传入questionId就可以显示，避免重复
  */
-function getQuestionDetails(obj){
+/*function getQuestionDetails(obj){
 	//通过问题列表页进入问题详情页的时候，使用记录在按钮中的value来记录questionId比用hidden类型的input记录更好一点
 	var questionId=$(obj).attr("value");
 	$.get(
@@ -71,7 +131,7 @@ function getQuestionDetails(obj){
 				}
 				if(value.replyCount>0){
 					questionAnswers+="<button class='btn-link detailsBtn' value='"+value.commentId+"' onClick='getReplysForComment(this)'>";
-					questionAnswers+="<span class='replyCountBtn'>"+value.replyCount+"</span>条回复</button>";
+					questionAnswers+=value.replyCount+"条回复</button>";
 				}				
 				questionAnswers+="<button class='btn-link replyBtn' value='"+value.commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
 				questionAnswers+="<div class='replysForComment'></div></li></ul></li>";
@@ -86,13 +146,13 @@ function getQuestionDetails(obj){
 			$(".createDiv").hide();
 		}
 	);	
-}
+}*/
 
 
 //显示评论问题的div
 function showCommentDiv(obj){
 	$("#addCommentDiv #submitCommentBtn").attr("value",$(obj).attr("value"));
-	if(chkUserLogonByWelcome()=="true"){
+	if(checkUserLogon()=="true"){
 		$("#addCommentDiv").show();
 	}
 	else{
@@ -100,6 +160,27 @@ function showCommentDiv(obj){
 	}
 	
 }
+
+/**
+ * 下面的函数通过页面上是否有欢迎信息检测用户是否登录
+ * 由于将问题详情页抽象出来了，而用到问题详情页的地方并非都在论坛中，在个人问题管理中也有
+ * 所以不能再淡出通过欢迎信息判断用户是否登录。为了让这个函数在不同情况下都正常工作，
+ * 这里在欢迎信息中没检测到的情况下到后台session中进行检测
+ * 原本打算用ajax，但是ajax里面修改函数外的值的时间存在延迟，得不到正确结果
+ * 所以这里针对不同页面的元素进行判断。在manage页中也加入一个#welcomInfo的hidden元素
+ * 后来发现这样也不行，php的include中的js无法检测到include之外的页面元素，所以只好把这个判断逻辑放在各自的页面中
+ * 后来发现放在各自的页面中，下面的函数也捕捉不到相应的元素，而且也降低了这个问题详情页的内聚性
+ * 于是设置了一个isUserLogon的函数，在页面加载时运行，并向页面中写入一个#isUserLogonId的标签，用来指示用户登录状态
+ */
+function checkUserLogon(){
+	var welcome="";
+	var checkIsLogon="false";
+	if($("#isUserLogonId").length>0){
+		checkIsLogon="true";
+	}
+	return checkIsLogon;
+}
+
 //隐藏评论问题的div
 function cancelAddComment(obj){
 	$(obj).siblings("textarea").val("");
@@ -209,6 +290,7 @@ function getReplysForComment(obj){
 					replyList+="<button class='btn-link replyBtn' value='"+value.replyId+"' onClick='showReplyReplyDiv(this)'>回复</button>";
 				});
 				$(obj).siblings(".replysForComment").html(replyList);
+				$(obj).siblings(".replysForComment").show();
 			}
 		);
 	}
@@ -221,7 +303,7 @@ function getReplysForComment(obj){
  */
 function showReplyCommentDiv(obj){
 	var commentId=$(obj).attr("value");
-	if(chkUserLogonByWelcome()=="true"){
+	if(checkUserLogon()=="true"){
 		if($(".replyCommnetOrReplyDiv").length>0){
 			alert("您还有其他打开的评论未评论且未取消，请评论或取消后再点击评论");			
 		}
@@ -242,7 +324,7 @@ function showReplyCommentDiv(obj){
  */
 function showReplyReplyDiv(obj){
 	var fatherReplyId=$(obj).attr("value");
-	if(chkUserLogonByWelcome()=="true"){
+	if(checkUserLogon()=="true"){
 		if($(".replyCommnetOrReplyDiv").length>0){
 			alert("您还有其他打开的评论未评论且未取消，请评论或取消后再点击评论");			
 		}
@@ -391,32 +473,14 @@ function disableReply(obj){
 	);
 }
 
-/**
- * 下面的函数通过页面上是否有欢迎信息检测用户是否登录
- * 由于将问题详情页抽象出来了，而用到问题详情页的地方并非都在论坛中，在个人问题管理中也有
- * 所以不能再淡出通过欢迎信息判断用户是否登录。为了让这个函数在不同情况下都正常工作，
- * 这里在欢迎信息中没检测到的情况下到后台session中进行检测
- * 原本打算用ajax，但是ajax里面修改函数外的值的时间存在延迟，得不到正确结果
- * 所以这里针对不同页面的元素进行判断。在manage页中也加入一个#welcomInfo的hidden元素
- * 后来发现这样也不行，php的include中的js无法检测到include之外的页面元素，所以只好把这个判断逻辑放在各自的页面中
- * 后来发现放在各自的页面中，下面的函数也捕捉不到相应的元素，而且也降低了这个问题详情页的内聚性
- * 于是设置了一个isUserLogon的函数，在页面加载时运行，并向页面中写入一个#isUserLogonId的标签，用来指示用户登录状态
- */
-function chkUserLogonByWelcome(){
-	var welcome="";
-	var isLogon="false";
-	if($("#isUserLogonId").length>0){
-		isLogon="true";
-	}
-	return isLogon;	
-}
+
 
 /**
  * 下面的函数添加用户对问题的关注
  */
 function addQuestionFollow(obj){
 	//用户已经登录的情况下才能关注问题
-	if(chkUserLogonByWelcome()=="true"){
+	if(checkUserLogon()=="true"){
 		var questionId=$(obj).attr("value");
 		$.post(
 			"../Controller/QuestionController.php",

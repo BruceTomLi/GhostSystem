@@ -33,6 +33,8 @@
 					      		<li><a href="user.php">用户</a></li>
 					      		<li><a href="role.php">角色</a></li>
 					      		<li><a href="authority.php">权限</a></li>
+					      		<li><a href="questions.php">问题</a></li>
+					      		<li><a href="topics.php">话题</a></li>
 					      		<li><a href="article.php">文章</a></li>
 					      		<li><a href="about.php">关于</a></li>	
 					      		<li><a href="../forum/question.php">返回论坛</a></li>						

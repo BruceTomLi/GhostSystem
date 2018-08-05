@@ -3,7 +3,7 @@
 	require_once(__DIR__."/../classes/MysqlPdo.php");
 	
 	/**
-	 * 这个“作者”类主要用来写一些文章，作者可以对自己的文章进行管理
+	 * 这个权限管理类主要用来对用户的权限信息进行管理
 	 */
 	class PowerManager extends User{
 		/**

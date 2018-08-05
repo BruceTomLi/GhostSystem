@@ -1,3 +1,8 @@
+<?php
+	//获取问题页数，用于分页显示
+	$page=$_REQUEST['page']??1;
+	$keyword=$_REQUEST['keyword']??"";
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -10,8 +15,15 @@
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
 		<link href="../css/manage.css" rel="stylesheet" type="text/css">
 		<script src="../js/manage.js"></script>
+		<script src="../js/MyPager.js"></script>
+		<script src="../js/article.js"></script>
 	</head>
 	<body>
+		<!--存放页数信息，以便于分页显示-->
+		<div>
+			<input type="hidden" id="pageHidden" value="<?php echo $page; ?>"/>
+			<input type="hidden" id="keywordHidden" value="<?php echo $keyword; ?>"/>
+		</div>
 		<div class="container-fluid">
 			<header id="manageHeader">
 				<?php include(__DIR__."/../View/manageHeader.php"); ?>
@@ -20,10 +32,10 @@
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
 					<div class="manageMenu">	
-						<form class="form-search input-append pull-left">
-							<input class="input-medium" type="text" placeholder="文章名/标签/文章内容" /> 
-							<button type="submit" class="btn">查找</button>
-						</form>
+						<div class="form-search input-append pull-left">
+							<input class="input-medium" type="text" id="keyword" placeholder="文章名/标签/文章内容" /> 
+							<button type="submit" class="btn" onclick="searchArticles()">查找</button>
+						</div>
 						
 						<ul class="nav nav-tabs pull-right">	
 							<li>
@@ -38,24 +50,24 @@
 					<div class="handleMultiDiv">
 						<div class="selectAllOrNotDiv pull-left">
 							<label class="checkbox inline">
-						      	<input type="checkbox"> 全选
+						      	<input type="checkbox" id="selectAll" onclick="selectAll()"> 全选
 						    </label>
 						    <label class="checkbox inline">
-						      	<input type="checkbox"> 反选
+						      	<input type="checkbox" id="selectReverse" onclick="selectReverse()"> 反选
 						    </label>
 						</div>
 						
 					    <div class="enableOrDisableDiv pull-right">					    	
-						    <button id="disabledBtn" class="btn btn-warning inline">禁用选中文章</button>
-							<button id="enabledBtn" class="btn btn-success inline">启用选中文章</button>
-							<button id="disabledQueryBtn" class="btn btn-warning inline">禁用查询文章</button>
-							<button id="enabledQueryBtn" class="btn btn-success inline">启用查询文章</button>
-							<button id="deleteBtn" class="btn btn-warning inline">删除选中文章</button>
-							<button id="deleteQueryBtn" class="btn btn-warning inline">删除查询文章</button>
+						    <button id="disabledBtn" class="btn btn-warning inline" onclick="disablePublishSelectArticles()">禁止发布选中文章</button>
+							<button id="enabledBtn" class="btn btn-success inline" onclick="enablePublishSelectArticles()">允许发布选中文章</button>
+							<!--<button id="disabledQueryBtn" class="btn btn-warning inline">禁用查询文章</button>-->
+							<!--<button id="enabledQueryBtn" class="btn btn-success inline">启用查询文章</button>-->
+							<button id="deleteBtn" class="btn btn-danger inline" onclick="deleteSelectArticles()">删除选中文章</button>
+							<!--<button id="deleteQueryBtn" class="btn btn-warning inline">删除查询文章</button>-->
 						</div>
 					</div>
 					<div class="tableDiv">
-						<table class="table">		
+						<table class="table" id="articlesTable">		
 						<thead>
 							<tr>
 								<th class="forSelectMulti">选择</th>
@@ -65,9 +77,7 @@
 								<th class="detailsInfo">发布者</th>
 								<th class="detailsInfo">大小</th>
 								<th class="detailsInfo">标签</th>
-								<th>是否公开</th>
 								<th>禁止发布</th>
-								<th class="detailsInfo">查看详情</th>
 								<th>删除</th>
 							</tr>							
 						</thead>
@@ -97,28 +107,20 @@
 									贫穷，富贵，道德，正义，诱惑，犯罪
 								</td>
 								<td>
-									<div class="switch" data-on-label="公开" data-off-label="不公开">
-									    <input type="checkbox" checked />
-									</div>
+									<button class='btn btn-info' value='"+value.articleId+"'>查看详情</button>
 								</td>
 								<td>
-									<div class="switch" data-on-label="禁止发布" data-off-label="可以发布">
-									    <input type="checkbox" checked />
-									</div>
-								</td>
-								<td class="detailsInfo">
-									<button class="btn-link detailsBtn">查看详情</button>
+									<button class='btn btn-warning' value='"+value.articleId+"'>禁止发布</button>
 								</td>
 								<td>
-									<button class="btn-link">删除</button>
+									<button class="btn btn-danger" value='"+value.articleId+"'>删除</button>
 								</td>
-							</tr>
-							
+							</tr>							
 						</tbody>
 					</table>
 					</div>
 					
-					<div class="pagination">
+					<div class="pagination" id="paginationDiv">
 						<ul>
 							<li>
 								<a href="#">上一页</a>
@@ -155,10 +157,11 @@
 								<button class="btn-link listBtn">返回文章列表</button>
 							</li>
 						</ul>
-						<article class="articleDetail">
-							<h4>穷且益坚，不坠青云之志</h4>
-							<p><span>作者：山外山</span></p>
-							<section>
+						<article id="articleDetail">
+							<h4 id="detailsTitle">穷且益坚，不坠青云之志</h4>
+							<p id="detailsLabel">标签：<span>电影观后感</span></p>
+							<p id="detailsAuthor">作者：<span>山外山</span></p>
+							<section id="detailsContent">
 								<p>
 									最近我们看了一部电影，叫做“我不是药神”，讲述主人公为了延续一千多名慢粒白血病患者的生命，
 								不惜从印度进口违禁药，最后被警方抓到判刑的故事。如果正义和法律不能两全，我们到底是做守法奉公

@@ -241,16 +241,40 @@
 		/**
 		 * 获取用户提出的问题的问题列表
 		 */
-		function getSelfQuestionList(){
+		function getSelfQuestionList($page=1){
 			if($this->isUserLogon()){
 				global $pdo;
+				//获取分页数据
+				$questionsCount=$this->getSelfQuestionCount();
+				$pageTotal=ceil($questionsCount/5);//获取总页数
+				//规范化页数，并返回起始页
+				$startRow=$this->getStartPage($page,$pageTotal);
+				
+				//分页时要用到limit，由于对limit后面的参数（不能用数组参数传值）
+				//在上面进行了限制，可以防止sql注入，所以对于该参数使用字符串拼接
 				$paraArr=array(":asker"=>$_SESSION['username']);
-				$sql="select questionId,:asker as asker,askDate,questionType,content,enable from tb_question where askerId=(select userId from tb_user where username=:asker)";
+				$sql="select questionId,:asker as asker,askDate,questionType,content,enable from tb_question where askerId=(select userId from tb_user where username=:asker) limit $startRow,5";
 				$questionList=$pdo->getQueryResult($sql,$paraArr);
 				return $questionList;
 			}
 			else{
-				return null;
+				return "未登录系统，无法进行操作";
+			}
+		}
+		
+		/**
+		 * 获取个人问题的总数
+		 */
+		function getSelfQuestionCount(){
+			if($this->isUserLogon()){
+				global $pdo;
+				$paraArr=array(":logonUser"=>$_SESSION['username']);
+				$sql="select count(*) as questionsCount from tb_question where askerId=(select userId from tb_user where username=:logonUser)";
+				$questionsCount=$pdo->getOneFiled($sql, "questionsCount",$paraArr);
+				return $questionsCount;
+			}
+			else{
+				return "未登录系统，无法进行操作";
 			}
 		}
 		
@@ -274,33 +298,65 @@
 		 * 下面通过搜索问题内容或者描述中的关键字来检索相应的问题（针对单个用户）
 		 * 单个用户搜索问题的时候，无论问题是否被禁用，都要能搜索出来进行管理
 		 */
-		function getQuestionListByContentOrDescription($keyword){
+		function getQuestionListByContentOrDescription($keyword,$page=1){
+			if($this->isUserLogon()){
+				global $pdo;
+				//获取分页数据
+				$count=$this->getQuestionListByContentOrDescriptionCount($keyword);
+				$pageTotal=ceil($count/5);//获取总页数
+				//规范化页数，并返回起始页
+				$startRow=$this->getStartPage($page,$pageTotal);
+				
+				$username=$_SESSION['username'];
+				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+				$sql="select :asker as asker,tq.* from tb_question tq where askerId=(select userId from tb_user where username=:asker) ";
+				$sql.="and (content like :keyword or questionDescription like :keyword) limit $startRow,5";
+				$questionList=$pdo->getQueryResult($sql,$paraArr);
+				return $questionList;
+			}
+			else{
+				return "未登录无法进行操作";
+			}
+		}
+		
+		/**
+		 * 获取关键字搜索出的问题条数
+		 */
+		function getQuestionListByContentOrDescriptionCount($keyword){
 			if($this->isUserLogon()){
 				global $pdo;
 				$username=$_SESSION['username'];
 				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
 				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select :asker as asker,tq.* from tb_question tq where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or questionDescription like :keyword)";
-				$questionList=$pdo->getQueryResult($sql,$paraArr);
-				return $questionList;
+				$sql="select count(*) as questionCount from tb_question tq where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or questionDescription like :keyword)";
+				$count=$pdo->getOneFiled($sql,"questionCount",$paraArr);
+				return $count;
 			}
 			else{
-				return null;
+				return "未登录无法进行操作";
 			}
 		}
 		
 		/**
 		 * 下面的函数用来禁用用户个人的问题
 		 * 在查询中使用当前登录者，防止黑客禁用其他人的问题
-		 * 问题管理员统一批量管理问题时就不能使用这个函数了
+		 * hasAuthority这个参数是给管理员用的，如果判断出用户非问题创建者，但是有问题管理权限，也可以管理问题
 		 */
-		function disableSelfQuestion($questionId){
+		function disableSelfQuestion($questionId,$hasAuthority=false){
 			if($this->isUserLogon()){
 				global $pdo;
 				$logonUser=$_SESSION['username'];
-				$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
-				$sql="update tb_question set enable=0 where questionId=:questionId ";
-				$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+				$paraArr=array();
+				if($hasAuthority){
+					$paraArr=array(":questionId"=>$questionId);
+					$sql="update tb_question set enable=0 where questionId=:questionId ";
+				}
+				else{
+					$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
+					$sql="update tb_question set enable=0 where questionId=:questionId ";
+					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+				}				
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -312,13 +368,22 @@
 		/**
 		 * 下面的函数用来启用用户个人问题
 		 * 在查询中使用当前登录者，防止黑客启用其他人的问题
-		 * 问题管理员统一批量管理问题时就不能使用这个函数了
+		 * hasAuthority这个参数是给管理员用的，如果判断出用户非问题创建者，但是有问题管理权限，也可以管理问题
 		 */
-		function enableSelfQuestion($questionId){
+		function enableSelfQuestion($questionId,$hasAuthority=false){
 			if($this->isUserLogon()){
 				global $pdo;
-				$paraArr=array(":questionId"=>$questionId);
-				$sql="update tb_question set enable=1 where questionId=:questionId";
+				$logonUser=$_SESSION['username'];
+				$paraArr=array();
+				if($hasAuthority){
+					$paraArr=array(":questionId"=>$questionId);
+					$sql="update tb_question set enable=1 where questionId=:questionId ";
+				}
+				else{
+					$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
+					$sql="update tb_question set enable=1 where questionId=:questionId ";
+					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+				}
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
 			}
@@ -565,8 +630,8 @@
 				global $pdo;
 				$username=$_SESSION['username'];
 				$paraArr=array(":username"=>$username);
-				//这里不应对密码进行查询
-				$sql="select userId,username,email,sex,job,province,city,oneWord,heading from tb_user where username=:username";
+				//这里不应对密码进行查询，但是要加载角色，为避免复杂逻辑，从视图中加载
+				$sql="select roles,userId,username,email,sex,job,province,city,oneWord,heading from view_usershasroles where username=:username";
 				$result=$pdo->getQueryResult($sql,$paraArr);
 				return $result;
 			}
@@ -679,15 +744,16 @@
 		 * 理论上应该在插入之前判断用户是否已经关注了，但是这样会引起对数据库进行两次查询
 		 * 降低网站整体性能。我将在sql语句中进行判断，让一次查询一次插入变成仅有一次插入
 		 */
-		function addFollow($starId,$followType){
-			if($this->isUserLogon()){				
+		function addFollow($starId,$followType){			
+			if($this->isUserLogon() && !$this->isFollowExist($starId)){			
 				global $pdo;
 				$logonUser=$_SESSION['username'];
 				$followId=uniqid("",true);
-				$paraArr=array(":logonUser"=>$logonUser,":followId"=>$followId,":starId"=>$starId,":followType"=>$followType);
+				$paraArr=array(":fansName"=>$logonUser,":followId"=>$followId,":starId"=>$starId,":followType"=>$followType);
 				//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
-				$sql="insert into tb_follow (followId,starId,fansId,type) select :followId,:starId,(select userId from tb_user where username=:logonUser),:followType ";
-				$sql.="from dual where not exists (select * from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser))";
+				//$sql="insert into tb_follow (followId,starId,fansId,type) select :followId,:starId,(select userId from tb_user where username=:logonUser),:followType ";
+				//$sql.="from dual where not exists (select * from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser))";
+				$sql="insert into tb_follow values(:followId,:starId,(select userId from tb_user where username=:fansName),:followType)";
 				
 				$affectRow=$pdo->getUIDResult($sql,$paraArr);
 				return $affectRow;
@@ -695,6 +761,25 @@
 			else{
 				return "没有登录系统，无法进行关注";
 			}
+		}
+		
+		/**
+		 * 判断关注是否已经存在
+		 */
+		function isFollowExist($starId){
+			if($this->isUserLogon()){			
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$paraArr=array(":fansName"=>$logonUser,":starId"=>$starId);
+				//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
+				$sql="select count(*) as followCount from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:fansName)";
+				
+				$count=$pdo->getOneFiled($sql, "followCount",$paraArr);
+				return $count>0?true:false;
+			}
+			else{
+				return "没有登录系统，无法进行关注";
+			}			
 		}
 		
 		/**
@@ -762,7 +847,7 @@
 				global $pdo;
 				$username=$_SESSION['username'];
 				$paraArr=array(":logonUser"=>$username);
-				$sql="select userId,username,sex,email from tb_user where userId in (select starId from tb_follow where fansId in(select userId from tb_user where username=:logonUser))";
+				$sql="select userId,username,sex,email,oneWord from tb_user where userId in (select starId from tb_follow where fansId in(select userId from tb_user where username=:logonUser))";
 				$followedUsers=$pdo->getQueryResult($sql,$paraArr);
 				return $followedUsers;
 			}
@@ -903,5 +988,401 @@
 				return "没有登录系统，无法获取相关信息";
 			}
 		}
+		
+		/**
+		 * 用户删除自己的问题
+		 * hasAuthority这个参数是给管理员用的，如果判断出用户非问题创建者，但是有问题管理权限，也可以管理问题
+		 */
+		function deleteSelfQuestion($questionId,$hasAuthority=false){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$paraArr=array();
+				if($hasAuthority){
+					$paraArr=array(":questionId"=>$questionId);
+					$sql="delete from tb_question where questionId=:questionId";
+				}
+				else{
+					$paraArr=array(":logonUser"=>$logonUser,":questionId"=>$questionId);
+					$sql="delete from tb_question where questionId=:questionId and askerId =(select userId from tb_user where  username=:logonUser)";
+				}
+				
+				$deleteQuestionCount=$pdo->getUIDResult($sql,$paraArr);
+				return $deleteQuestionCount;
+			}
+			else{
+				return "没有登录系统，无法进行该操作";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来在分页的时候规范页数信息，并获得起始页
+		 */
+		function getStartPage($page,$pageTotal){
+			//将传入的$page限制在合适范围
+			$page=intval($page)?$page:1;//不是数字时设为1
+			$page=floor($page)<1?1:floor($page);//小于1时设为1
+			$page=floor($page)>$pageTotal?$pageTotal:floor($page);//大于最大页数时设为最大页数
+			$startRow=$page*5-5;//数据库index是从0开始的
+			return $startRow;
+		}
+		
+		/**
+		 * 加载问题类型
+		 */
+		function loadQuestionTypes(){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$sql="select name from tb_types where belongTo='question'";
+				
+				$types=$pdo->getQueryResult($sql);
+				return $types;
+			}
+			else{
+				return "没有登录系统，无法获取相关信息";
+			}
+		}
+		
+		/**
+		 * 加载作文类型
+		 */
+		function loadArticleTypes(){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$sql="select name from tb_types where belongTo='article'";
+				
+				$types=$pdo->getQueryResult($sql);
+				return $types;
+			}
+			else{
+				return "没有登录系统，无法获取相关信息";
+			}
+		}
+		
+		/**
+		 * 加载话题类型
+		 */
+		function loadTopicTypes(){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$sql="select name from tb_types where belongTo='topic'";
+				
+				$types=$pdo->getQueryResult($sql);
+				return $types;
+			}
+			else{
+				return "没有登录系统，无法获取相关信息";
+			}
+		}
+		
+		/*************************下面是针对话题设计的函数，基本上和问题差不多********************/
+		/**
+		 * 下面定义一个函数用来让用户创建一个新的话题
+		 */
+		function createNewTopic($topicType,$topicContent,$topicDescription){			
+			if($this->isUserLogon() && !$this->isTopicRepeat($topicContent)){
+				global $pdo;
+				$topicId=uniqid("",true);
+				$asker=$_SESSION['username'];
+				//需要先获取到登录用户的用户ID，tb_topic的数据库中需要保存用户Id而不是用户名，因为用户名虽然唯一但可变
+				//但是这样需要进行两次sql查询，影响性能，我试试将两条sql语句合并成一条				
+				// $paraArr=array(":username"=>$asker);
+				// $sql="select userId from tb_user where username=:username";
+				// $askerId=$pdo->getOneFiled($sql, "userId",$paraArr);
+				
+				$askerDate=date("Y-m-d H:i:s");
+				$paraArr=array(":topicId"=>$topicId,":asker"=>$asker,":askDate"=>$askerDate,":topicType"=>$topicType,
+					":topicContent"=>$topicContent,":topicDescription"=>$topicDescription,":enable"=>"1");
+				$sql="insert into tb_topic values(:topicId,(select userId from tb_user where username=:asker),:askDate,:topicType,:topicContent,:topicDescription,:enable)";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		/**
+		 * 下面定义的函数检测用户要添加的话题是否重复
+		 */
+		function isTopicRepeat($topicContent){
+			global $pdo;
+			$paraArr=array(":topicContent"=>$topicContent);
+			$sql="select count(*) as topicCount from tb_topic where content=:topicContent";
+			$count=$pdo->getOneFiled($sql, "topicCount",$paraArr);
+			$result=$count>0?true:false;
+			return $result;
+		}
+		
+		/**
+		 * 获取用户提出的话题的话题列表
+		 */
+		function getSelfTopicList($page=1){
+			if($this->isUserLogon()){
+				global $pdo;
+				//获取分页数据
+				$topicsCount=$this->getSelfTopicCount();
+				$pageTotal=ceil($topicsCount/5);//获取总页数
+				//规范化页数，并返回起始页
+				$startRow=$this->getStartPage($page,$pageTotal);
+				
+				//分页时要用到limit，由于对limit后面的参数（不能用数组参数传值）
+				//在上面进行了限制，可以防止sql注入，所以对于该参数使用字符串拼接
+				$paraArr=array(":asker"=>$_SESSION['username']);
+				$sql="select topicId,:asker as asker,askDate,topicType,content,enable from tb_topic where askerId=(select userId from tb_user where username=:asker) limit $startRow,5";
+				$topicList=$pdo->getQueryResult($sql,$paraArr);
+				return $topicList;
+			}
+			else{
+				return "未登录系统，无法进行操作";
+			}
+		}
+		
+		/**
+		 * 获取个人话题的总数
+		 */
+		function getSelfTopicCount(){
+			if($this->isUserLogon()){
+				global $pdo;
+				$paraArr=array(":logonUser"=>$_SESSION['username']);
+				$sql="select count(*) as topicsCount from tb_topic where askerId=(select userId from tb_user where username=:logonUser)";
+				$topicsCount=$pdo->getOneFiled($sql, "topicsCount",$paraArr);
+				return $topicsCount;
+			}
+			else{
+				return "未登录系统，无法进行操作";
+			}
+		}
+		
+		/**
+		 * 下面通过话题的Id获取到话题的详情
+		 */
+		function getTopicDetailsByTopicId($topicId){
+			if($this->isUserLogon()){
+				global $pdo;
+				$paraArr=array(":topicId"=>$topicId);
+				$sql="select * from tb_topic where topicId=:topicId";
+				$topicDetails=$pdo->getQueryResult($sql,$paraArr);
+				return $topicDetails;
+			}
+			else{
+				return null;
+			}
+		}
+		
+		/**
+		 * 下面通过搜索话题内容或者描述中的关键字来检索相应的话题（针对单个用户）
+		 * 单个用户搜索话题的时候，无论话题是否被禁用，都要能搜索出来进行管理
+		 */
+		function getTopicListByContentOrDescription($keyword,$page=1){
+			if($this->isUserLogon()){
+				global $pdo;
+				//获取分页数据
+				$count=$this->getTopicListByContentOrDescriptionCount($keyword);
+				$pageTotal=ceil($count/5);//获取总页数
+				//规范化页数，并返回起始页
+				$startRow=$this->getStartPage($page,$pageTotal);
+				
+				$username=$_SESSION['username'];
+				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+				$sql="select :asker as asker,tt.* from tb_topic tt where askerId=(select userId from tb_user where username=:asker) ";
+				$sql.="and (content like :keyword or topicDescription like :keyword) limit $startRow,5";
+				$topicList=$pdo->getQueryResult($sql,$paraArr);
+				return $topicList;
+			}
+			else{
+				return "未登录无法进行操作";
+			}
+		}
+		
+		/**
+		 * 获取关键字搜索出的话题条数
+		 */
+		function getTopicListByContentOrDescriptionCount($keyword){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+				$sql="select count(*) as topicCount from tb_topic tt where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or topicDescription like :keyword)";
+				$count=$pdo->getOneFiled($sql,"topicCount",$paraArr);
+				return $count;
+			}
+			else{
+				return "未登录无法进行操作";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来禁用用户个人的话题
+		 * 在查询中使用当前登录者，防止黑客禁用其他人的话题
+		 * hasAuthority这个参数是给管理员用的，如果判断出用户非话题创建者，但是有话题管理权限，也可以管理话题
+		 */
+		function disableSelfTopic($topicId,$hasAuthority=false){
+			if($this->isUserLogon()){
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$paraArr=array();
+				if($hasAuthority){
+					$paraArr=array(":topicId"=>$topicId);
+					$sql="update tb_topic set enable=0 where topicId=:topicId ";
+				}
+				else{
+					$paraArr=array(":topicId"=>$topicId,":logonUser"=>$logonUser);
+					$sql="update tb_topic set enable=0 where topicId=:topicId ";
+					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+				}				
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return "禁用话题失败，你没有登录系统";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来启用用户个人话题
+		 * 在查询中使用当前登录者，防止黑客启用其他人的话题
+		 * hasAuthority这个参数是给管理员用的，如果判断出用户非话题创建者，但是有话题管理权限，也可以管理话题
+		 */
+		function enableSelfTopic($topicId,$hasAuthority=false){
+			if($this->isUserLogon()){
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$paraArr=array();
+				if($hasAuthority){
+					$paraArr=array(":topicId"=>$topicId);
+					$sql="update tb_topic set enable=1 where topicId=:topicId ";
+				}
+				else{
+					$paraArr=array(":topicId"=>$topicId,":logonUser"=>$logonUser);
+					$sql="update tb_topic set enable=1 where topicId=:topicId ";
+					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+				}
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return "启用话题失败，你没有登录系统";
+			}
+		}
+		
+		/**
+		 * 下面的函数用来让用户评论一个话题
+		 */
+		function commentTopic($topicId,$content){
+			if($this->isUserLogon()){
+				global $pdo;
+				//向数据库中增加评论信息
+				$commenter=$_SESSION['username'];
+				$commentId=uniqid("",true);
+				$commentDate=date("Y-m-d H:i:s");
+				$paraArr=array(":commentId"=>$commentId,":topicId"=>$topicId,
+					":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content,":enable"=>"1");
+				$sql="insert into tb_comment values(:commentId,:topicId,(select userId from tb_user where username=:commenter),:commentDate,:content,:enable)";
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				
+				$comment=$this->getCommentByCommentId($commentId);
+				
+				$resultArr=array("affectRow"=>$affectRow,"createdComment"=>$comment);				
+				
+				return $resultArr;
+			}
+			else{
+				return null;
+			}
+		}
+				
+		
+		/**
+		 * 下面的函数通过话题号加载相应的评论
+		 */
+		function getCommentsForTopic($topicId){
+			global $pdo;
+			$logonUser=$_SESSION['username']??"";
+			$paraArr=array(":logonUser"=>$logonUser,":topicId"=>$topicId);
+			//$sql="select * from tb_comment where topicId=:topicId";
+			//$sql="select case when commenter=:logonUser then 'true' else 'false' end as isCommenter,commentId,";
+			//$sql.="topicId,commenter,commentDate,content from tb_comment where topicId=:topicId;";
+			//由于逻辑变得有点复杂（需要判断是否为当前登录者，需要获取该评论的回复数，所以改为使用存储过程
+			$sql="call pro_getComments(:logonUser,:topicId)";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
+		}
+		
+		/**
+		 * 下面的函数根据评论号删除一个评论
+		 */
+		function disableCommentForTopic($commentId){
+			if($this->isUserLogon() && $this->isCommentEnable($commentId)){
+				global $pdo;
+				$commenter=$_SESSION['username'];
+				$paraArr=array(":commentId"=>$commentId,":commenter"=>$commenter);
+				//加入关于评论者的条件，保证这里只有评论者可以删除自己的评论，而不是任意一个登录的人
+				$sql="update tb_comment set enable=0 where commentId=:commentId and commenterId=(select if(count(userId)>0,userId,'') from tb_user where username=:commenter)";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				return $result;
+			}
+			else{
+				return 0;
+			}
+		}
+		
+		/**
+		 * 下面的函数获取单个话题的评论数
+		 */
+		function getCommentCountByTopicId($topicId){
+			global $pdo;
+			$paraArr=array(":topicId"=>$topicId);
+			$sql="select count(commentId) as commentCount from tb_comment where questionId=:topicId and enable=1";
+			$commentCount=$pdo->getOneFiled($sql, "commentCount",$paraArr);
+			return $commentCount;
+		}
+				
+		/**
+		 * 用户删除自己的话题
+		 * hasAuthority这个参数是给管理员用的，如果判断出用户非话题创建者，但是有话题管理权限，也可以管理话题
+		 */
+		function deleteSelfTopic($topicId,$hasAuthority=false){
+			if($this->isUserLogon()){				
+				global $pdo;
+				$logonUser=$_SESSION['username'];
+				$paraArr=array();
+				if($hasAuthority){
+					$paraArr=array(":topicId"=>$topicId);
+					$sql="delete from tb_topic where topicId=:topicId";
+				}
+				else{
+					$paraArr=array(":logonUser"=>$logonUser,":topicId"=>$topicId);
+					$sql="delete from tb_topic where topicId=:topicId and askerId =(select userId from tb_user where  username=:logonUser)";
+				}
+				
+				$deleteTopicCount=$pdo->getUIDResult($sql,$paraArr);
+				return $deleteTopicCount;
+			}
+			else{
+				return "没有登录系统，无法进行该操作";
+			}
+		}
+		
+		/**
+		 * 下面的函数加载用户关注的问题/话题/人，在用户管理自己的关注的时候被用到
+		 * 前面的函数不涉及到问题/话题表，所以可以通用，下面的函数加载问题/话题/人信息，就需要单独写
+		 */
+		function loadUserFollowedTopics(){
+			if($this->isUserLogon()){
+				global $pdo;
+				$username=$_SESSION['username'];
+				$paraArr=array(":logonUser"=>$username);
+				$sql="select (select username from tb_user where userId=tt.askerId) as asker,tt.* from tb_topic tt where topicId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
+				$followedTopics=$pdo->getQueryResult($sql,$paraArr);
+				return $followedTopics;
+			}
+			else{
+				return "用户未登录系统，无法获取相关信息";
+			}
+		}
+				
 	}
 ?>

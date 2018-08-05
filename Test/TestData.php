@@ -11,10 +11,11 @@
 	define("RepeatName","tomtom");
 	define("RepeatEmail","fasdfa@qq.com");
 	define("Province","湖北省");
-	define("QuestionType","IT");
+	define("QuestionType","电脑网络");
 	define("QuestionContent","这是单元测试里面用来测试创建一个新的问题的测试内容");
 	define("QuestionDescription","这里是问题描述，实际情况中可以填写超文本信息");
 	define("QuestionId","5b4fe29fc28900.16360449");
+	define("QuestionIdForDelete","5b6127a880ac39.27722801");
 	define("ExampleComment","这里测试给问题增加一条评论");
 	define("CommentId","5b4fe52284d406.43129252");
 	define("ReplyId","5b533f62a5b881.48909021");
@@ -26,7 +27,11 @@
 	define("NewUserEmail","liyuntian@123.com");
 	define("UserId","11");
 	//此时还没有开发出话题的功能，所以给的是一个replyId，是为了测试用户关注话题
-	define("TopicId","5b533f62a5b881.48909021");
+	define("TopicType","电脑网络");
+	define("TopicContent","这是单元测试里面用来测试创建一个新的话题的测试内容");
+	define("TopicDescription","这里是话题描述，实际情况中可以填写超文本信息");
+	define("TopicId","5b642b0667ac21.59867297");
+	define("TopicIdForDelete","1");
 	
 	//下面是给PowerManager类的测试数据
 	define("AuthorityId","99");
@@ -38,4 +43,15 @@
 	define("RoleAuthority","99");
 	define("RoleId", "5b5abea4d23cc1.30122938");
 	define("DeleteRoleId", "5b5aceffd4b556.67207669");//这个数据是一次性的，被删除之后再产生的就不是这个Id了
+	
+	//下面是给UserManager类的测试数据
+	define("UserRoles","5b5ac3d9d02270.56110138,5b5abea4d23cc1.30122938");
+	
+	//下面是给Author类的测试数据
+	define("ArticleTitle","测试文章标题");
+	define("ArticleSize",3000);
+	define("ArticleLabel","电影观后感");
+	define("ArticleContent","最近我们看了一部电影，叫做“我不是药神”，讲述主人公为了延续一千多名慢粒白血病患者的生命， 不惜从印度进口违禁药，最后被警方抓到判刑的故事。如果正义和法律不能两全，我们到底是做守法奉公 的好公民呢，还是做坚持正义的救世主呢？而我想到的不仅仅是这个问题，还有，一个救世主能够做多久呢？");
+	define("ArticleId","5b5eafdc32f240.91762645");
+	define("ArticleIdForDelete","5b5eaf71441c55.98247029");
 ?>

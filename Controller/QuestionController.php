@@ -20,44 +20,11 @@
 			return $this->user->getLogonUsername();
 		}
 		
-		public function createNewQuestion(){
-			$questionType=$_REQUEST['questionType'];
-			$questionContent=$_REQUEST['questionContent'];
-			$questionDescription=$_REQUEST['questionDescription'];
-			return $this->user->createNewQuestion($questionType, $questionContent, $questionDescription);
-		}
-		
-		public function getSelfQuestionList(){
-			$questionList=json_encode($this->user->getSelfQuestionList());
-			return $questionList;
-		}
 		
 		public function getSelfQuestionDetails(){
-			$questionId=$_REQUEST['questionId'];
+			$questionId=$_REQUEST['questionId']??"";
 			$questionDetails=json_encode($this->user->getQuestionDetailsByQuestionId($questionId));
 			return $questionDetails;
-		}
-		
-		public function searchQuestionListByContentOrDescription(){
-			$keyword=$_REQUEST['keyword'];
-			$questionList=json_encode($this->user->getQuestionListByContentOrDescription($keyword));
-			return $questionList;
-		}
-		
-		public function disableSelfQuestion(){
-			$questionId=$_REQUEST['questionId'];
-			$affectRow=$this->user->disableSelfQuestion($questionId);
-			$resultArr=array("affectRow"=>$affectRow);
-			$result=json_encode($resultArr);
-			return $result;
-		}
-		
-		public function enableSelfQuestion(){
-			$questionId=$_REQUEST['questionId'];
-			$affectRow=$this->user->enableSelfQuestion($questionId);
-			$resultArr=array("affectRow"=>$affectRow);
-			$result=json_encode($resultArr);
-			return $result;
 		}
 		
 		public function getAllQuestion(){
@@ -214,23 +181,8 @@
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){
 				return $this->userLogonInfo();
 			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="createNewQuestion"){
-				return $this->createNewQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfQuestionList"){
-				return $this->getSelfQuestionList();
-			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfQuestionDetails"){
 				return $this->getSelfQuestionDetails();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchQuestionListByContentOrDescription"){
-				return $this->searchQuestionListByContentOrDescription();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfQuestion"){
-				return $this->disableSelfQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableSelfQuestion"){
-				return $this->enableSelfQuestion();
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllQuestion"){
 				return $this->getAllQuestion();

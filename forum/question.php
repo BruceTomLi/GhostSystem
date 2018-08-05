@@ -162,7 +162,7 @@
 						<?php include(__DIR__."/../View/questionDetails.php"); ?>
 					</div>
 					
-					<div class="span3 right-nav">
+					<div class="span3">
 						<?php include(__DIR__."/../View/questionRightNav.php"); ?>
 					</div>
 				</div>		

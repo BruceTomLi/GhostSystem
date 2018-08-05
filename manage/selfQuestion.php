@@ -1,3 +1,8 @@
+<?php
+	//获取问题页数，用于分页显示
+	$page=$_REQUEST['page']??1;
+	$keyword=$_REQUEST['keyword']??"";
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -18,9 +23,16 @@
 		<link href="../css/question.css" rel="stylesheet" type="text/css">
 		<script src="../js/loadInitEditor.js"></script>
 		<script src="../js/manageSelf.js"></script>
+		<!--使用分页功能的页面引用如下js-->
+		<script src="../js/MyPager.js"></script>
 		<script src="../js/SelfQuestion.js"></script>
 	</head>
 	<body>
+		<!--存放页数信息，以便于分页显示-->
+		<div>
+			<input type="hidden" id="pageHidden" value="<?php echo $page; ?>"/>
+			<input type="hidden" id="keywordHidden" value="<?php echo $keyword; ?>"/>
+		</div>
 		<div class="container-fluid">
 			<header id="manageHeader">
 				<?php include(__DIR__."/../View/manageHeader.php"); ?>
@@ -31,7 +43,7 @@
 					<div class="selfManageMenu">	
 						<div class="form-search input-append pull-left">
 							<input class="input-medium" type="text" id="keyword" placeholder="问题内容" /> 
-							<button type="submit" class="btn" id="searchQuestionBtn">查找</button>
+							<button type="submit" class="btn" id="searchQuestionBtn" onclick="searchQuestion()">查找</button>
 						</div>
 						
 						<ul class="nav nav-tabs pull-right">
@@ -41,15 +53,15 @@
 						</ul>
 					</div>
 					<div class="selfTableDiv">
-						<table class="table selfTable">		
+						<table class="table" id="questionsTable">		
 							<thead>
 								<tr>
 									<th>提问者</th>
 									<th>提问日期</th>
 									<th>问题类型</th>
 									<th>问题内容</th>
-									<th>详情</th>
-									<th>启用/禁用</th>
+									<th>公开/不公开</th>
+									<th>删除</th>
 								</tr>							
 							</thead>
 							<tbody>
@@ -64,19 +76,19 @@
 										IT类
 									</td>
 									<td>
-										软件必须修复所有bug之后才开始发布吗？
+										<a target='_blank' href='../forum/questionDetails.php?questionId=问题Id'>软件必须修复所有bug之后才开始发布吗？</a>
+									</td>						
+									<td>
+										<button class="btn btn-warning" value="问题Id">不公开</button>
 									</td>
 									<td>
-										<button class="btn-link detailsBtn">查看详情</button>
-									</td>								
-									<td>
-										<button class="btn-link" value="问题Id">启用/禁用</button>
+										<button class="btn btn-danger" value="问题Id">删除</button>
 									</td>
 								</tr>							
 							</tbody>
 						</table>
 					</div>
-					<div class="pagination">
+					<div class="pagination" id="paginationDiv">
 						<ul>
 							<li>
 								<a href="#">上一页</a>
@@ -105,7 +117,7 @@
 				
 			</div>			
 			
-			<div class="row-fluid detailsDiv">
+			<!--<div class="row-fluid detailsDiv">
 				<div class="span12 mainContent">
 					<ul class="nav nav-tabs pull-right">
 						<li>
@@ -114,7 +126,7 @@
 					</ul>
 					<?php include(__DIR__."/../View/questionDetails.php"); ?>
 				</div>
-			</div>
+			</div>-->
 			
 			
 			
@@ -129,7 +141,10 @@
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputQuestionType">问题类型</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputQuestionType" placeholder="问题类型">
+							      	<!--<input type="text" id="inputQuestionType" placeholder="问题类型">-->
+							      	<select id="inputQuestionType">
+							      		<option>问题类型</option>
+							      	</select>
 							    </div>
 						  	</div>
 						  	<div class="control-group">
@@ -224,7 +239,7 @@
 			
 			<footer id="manageFooter">
 				<?php include(__DIR__."/../View/manageFooter.php"); ?>
-			</footer>	
+			</footer>
 				
 		</div>		
 	</body>

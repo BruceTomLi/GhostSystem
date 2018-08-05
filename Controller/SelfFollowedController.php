@@ -20,6 +20,15 @@
 		}
 		
 		/**
+		 * 加载用户关注的话题
+		 */
+		public function loadUserFollowedTopics(){
+			$followedTopics=$this->user->loadUserFollowedTopics();
+			$result=json_encode($followedTopics);
+			return $result;
+		}
+		
+		/**
 		 * 加载用户关注的人
 		 */
 		public function loadUserFollowedUsers(){
@@ -43,6 +52,9 @@
 		public function selectAction(){			
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedQuestions"){
 				return $this->loadUserFollowedQuestions();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedTopics"){
+				return $this->loadUserFollowedTopics();
 			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedUsers"){
 				return $this->loadUserFollowedUsers();

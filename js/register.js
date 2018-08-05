@@ -128,8 +128,8 @@ function chkInputUserName(){
 		$('#userNameChk').text("用户名不能为空").removeClass().addClass("chkError");	
 		isNameOk=false;
 	}
-	else if(username.length<3 || username.length>20){
-		$('#userNameChk').text("3<用户名长度<20").removeClass().addClass("chkError");	
+	else if(username.length<2 || username.length>20){
+		$('#userNameChk').text("2<用户名长度<20").removeClass().addClass("chkError");	
 		isNameOk=false;
 	}
 	else{

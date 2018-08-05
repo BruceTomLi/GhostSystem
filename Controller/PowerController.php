@@ -1,12 +1,9 @@
 <?php
-	require_once(__DIR__.'/../Model/User.php');
 	require_once(__DIR__.'/../Model/PowerManager.php');
 	class PowerController{
-		private $user;
 		private $powerManager;
 		
 		public function __construct(){
-			$this->user=new User();
 			$this->powerManager=new PowerManager();
 		}
 		
@@ -35,10 +32,10 @@
 		public function selectAction(){
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAuthorityInfo"){
 				return $this->loadAuthorityInfo();
-			}	
+			}
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeAuthorityInfo"){
 				return $this->changeAuthorityInfo();
-			}		
+			}
 			return "没有发送合适的请求";
 		}
 	}

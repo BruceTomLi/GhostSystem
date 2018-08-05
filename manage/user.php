@@ -1,3 +1,13 @@
+<?php
+	//获取问题页数，用于分页显示
+	$page=$_REQUEST['page']??1;
+	$keyword=$_REQUEST['keyword']??"";
+	$role=$_REQUEST['role']??"";
+	$sex=$_REQUEST['sex']??"";
+	$enable=$_REQUEST['enable']??"";
+	$queryInfo=array("page"=>$page,"keyword"=>$keyword,"role"=>$role,"sex"=>$sex,"enable"=>$enable);
+	$queryJson=json_encode($queryInfo,true);
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -8,10 +18,15 @@
 		<link href="../bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" type="text/css">		
 		<script src="../js/jquery-1.9.1.js"></script>
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
-		<link href="../css/manage.css" rel="stylesheet" type="text/css">
-		<script src="../js/manage.js"></script>
+		<link href="../css/user.css" rel="stylesheet" type="text/css">
+		<script src="../js/MyPager.js"></script>
+		<script src="../js/user.js"></script>
 	</head>
 	<body>
+		<!--存放页数信息，以便于分页显示-->
+		<div>
+			<input type="hidden" id="queryJsonHidden" value='<?php echo $queryJson; ?>'/>
+		</div>
 		<div class="container-fluid">
 			<header id="manageHeader">
 				<?php include(__DIR__."/../View/manageHeader.php"); ?>
@@ -20,10 +35,10 @@
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
 					<div class="manageMenu">	
-						<form class="form-search input-append pull-left">
-							<input class="input-medium" type="text" placeholder="用户名/邮箱" /> 
-							<button type="submit" class="btn">查找</button>
-						</form>
+						<div class="form-search input-append pull-left">
+							<input class="input-medium" type="text" id="keyword" placeholder="用户名/邮箱" /> 
+							<button type="submit" class="btn" onclick="searchUsers()" id="searchUserBtn">查找</button>
+						</div>
 						
 						<ul class="nav nav-tabs pull-right">
 							<li>
@@ -38,18 +53,18 @@
 						</ul>
 					</div>
 					<div class="advanceSearchDiv">
-						<select>
+						<select id="selectRole">
 							  <option>所有角色</option>
 							  <option>普通用户</option>
 							  <option>权限管理员</option>
 							  <option>作者</option>
 						</select>
-						<select>
+						<select id="selectSex">
 							  <option>所有性别</option>
 							  <option>男</option>
 							  <option>女</option>
 						</select>
-						<select>
+						<select id="selectEnable">
 							  <option>禁用/启用</option>
 							  <option>禁用</option>
 							  <option>启用</option>
@@ -57,20 +72,20 @@
 					</div>
 					<div class="handleMultiDiv">
 						<label class="checkbox inline">
-					      	<input type="checkbox"> 全选
+					      	<input type="checkbox" id="selectAll" onclick="selectAll()"> 全选
 					    </label>
 					    <label class="checkbox inline">
-					      	<input type="checkbox"> 反选
+					      	<input type="checkbox" id="selectReverse" onclick="selectReverse()"> 反选
 					    </label>
 					    <div class="selectUserDiv pull-right">					    	
-						    <button id="disabledBtn" class="btn btn-warning inline">禁用选中用户</button>
-							<button id="enabledBtn" class="btn btn-success inline">启用选中用户</button>
-							<button id="disabledQueryBtn" class="btn btn-warning inline">禁用查询用户</button>
-							<button id="enabledQueryBtn" class="btn btn-success inline">启用查询用户</button>
+						    <button id="disabledBtn" class="btn btn-warning inline" onclick="disableSelectedUsers()">禁用选中用户</button>
+							<button id="enabledBtn" class="btn btn-success inline" onclick="enableSelectedUsers()">启用选中用户</button>
+							<button id="disabledQueryBtn" class="btn btn-warning inline" onclick="disableQueryUsers()">禁用查询用户</button>
+							<button id="enabledQueryBtn" class="btn btn-success inline" onclick="enableQueryUsers()">启用查询用户</button>
 						</div>
 					</div>
 					<div class="tableDiv">
-						<table class="table">		
+						<table class="table" id="usersTable">		
 						<thead>
 							<tr>
 								<th class="forSelectMulti">选择</th>
@@ -83,7 +98,7 @@
 								<th class="detailsInfo">一句话介绍</th>
 								<th>用户角色</th>
 								<th>禁用</th>
-								<th>编辑</th>
+								<th>改角色</th>
 							</tr>							
 						</thead>
 						<tbody>
@@ -121,14 +136,14 @@
 									<button class="btn btn-warning">禁用</button>
 								</td>
 								<td>
-									<button class="btn btn-info editBtn">编辑</button>
+									<button class="btn btn-info editBtn">改角色</button>
 								</td>
 							</tr>
 							
 						</tbody>
 					</table>
 					</div>
-					<div class="pagination">
+					<div class="pagination" id="paginationDiv">
 						<ul>
 							<li>
 								<a href="#">上一页</a>
@@ -162,93 +177,45 @@
 					<div class="row-fluid ">
 						<ul class="nav nav-tabs pull-right">
 							<li>
-								<button class="btn-link listBtn">返回用户列表</button>
+								<button class="btn-link" id="backUserList" onclick="backUserList()">返回用户列表</button>
 							</li>
 						</ul>
-						<div class="form-horizontal registerForm">
+						<div class="form-horizontal" id="editUserDiv">
 							<div class="formTitle">
-								<legend>编辑用户</legend>
+								<legend>修改用户角色</legend>
 							</div>
 						  	<div class="control-group">
-						  		<label class="control-label" for="inputUsername">用户名</label>
+						  		<label class="control-label" for="username">用户名</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputUsername" placeholder="用户名">
-							      	<span id="userNameChk"></span>
+							      	<p id="username">显示用户名</p>
 							    </div>
 						  	</div>
 						  	<div class="control-group">
-						  		<label class="control-label" for="inputEmail">邮箱</label>
+						  		<label class="control-label" for="email">邮箱</label>
 						    	<div class="controls">
-						      		<input type="text" id="inputEmail" placeholder="邮箱">
-						      		<span id="emailChk"></span>
+						      		<p id="email">显示邮箱</p>
 						    	</div>
-						  	</div>
-							<div class="control-group">
-								<label class="control-label" for="inputPassword">密码</label>
-							    <div class="controls">
-							    	<input type="password" id="inputPassword" placeholder="密码">
-							    	<span id="passwordChk"></span>
-							    </div>
-							</div>
-						  	<div class="moreForm">
-							    <div class="control-group">
-							    	<label class="control-label" for="inputSex">性别</label>
-							    	<div class="controls selectSex">
-							    		<label class="radio inline">
-										  <input type="radio" name="sexRadios" id="optionsRadios1" value="man" checked>
-										  男
-										</label>
-										<label class="radio inline">
-										  <input type="radio" name="sexRadios" id="optionsRadios2" value="woman">
-										  女
-										</label>
-							    	</div>							  		
-								</div>
-								<div class="control-group">
-							  		<label class="control-label" for="inputJob">职业</label>
-								    <div class="controls">
-								    	<select id="inputJob">
-								    		<option value="empty">--</option>
-								    	</select>
-								    </div>
-								</div>
-								<div class="control-group">
-							  		<label class="control-label" for="inputCity">所在城市</label>
-								    <div class="controls">
-								    	<select class="input-small" id="province">
-								    		<!--<option value="province">请选择省份或直辖市</option>-->
-								    	</select>
-								    	<select class="input-small" id="city">
-								    		<!--<option value="city">请选择城市</option>-->
-								    	</select>
-								    </div>
-								</div>
-								<div class="control-group">
-									<label class="control-label" for="inputOneWord">一句话介绍</label>
-							    	<div class="controls">
-							      		<input type="text" id="inputOneWord" placeholder="一句话介绍">
-							    	</div>
-							  	</div>
 						  	</div>
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputUserRole">用户角色</label>
-						    	<div class="controls">
-						      		<select id="roles" multiple="multiple">
-							    		<!--<option value="city">请选择城市</option>-->
-							    	</select>
-							    	<span id="selectUserRoles"></span>
+						    	<div class="controls" id="userRoleDiv">
+						      		<label class="checkbox">
+								      	<input type="checkbox">普通用户</input>
+								    </label>
+								    <label class="checkbox">
+								      	<input type="checkbox">权限管理员</input>
+								    </label>
+								    <label class="checkbox">
+								      	<input type="checkbox">作者</input>
+								    </label>
 						    	</div>
 						  	</div>
-						  <div class="control-group">
-						    <div class="controls">
-						      <button type="submit" class="btn btn-info" id="changeUserBtn">修改</button>
-						      <button type="submit" class="btn btn-warning" id="changeUserCancleBtn">取消</button>
-						      <input type="hidden" id="isNameOk" value="false"/>
-						      <input type="hidden" id="isEmailOk" value="false"/>
-						      <input type="hidden" id="isPwdOk" value="false"/>
-						      <span id="regChk"></span>
-						    </div>
-						  </div>
+							<div class="control-group">
+							    <div class="controls">
+								    <button type="submit" class="btn btn-info" onclick="updateUserRoleInfo(this)" id="changeUserRoleBtn">修改</button>
+								    <button type="submit" class="btn btn-warning" onclick="backUserList()" id="changeUserRoleCancleBtn">取消</button>
+							    </div>
+							</div>
 						</div>
 						<hr>	
 					</div>						

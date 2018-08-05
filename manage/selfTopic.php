@@ -1,3 +1,8 @@
+<?php
+	//获取话题页数，用于分页显示
+	$page=$_REQUEST['page']??1;
+	$keyword=$_REQUEST['keyword']??"";
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -15,11 +20,19 @@
 		<script src="../external/google-code-prettify/prettify.js"></script>	
 		<script src="../bootstrap-wysiwyg.js"></script>
 		<link href="../css/manageSelf.css" rel="stylesheet" type="text/css">
+		<link href="../css/question.css" rel="stylesheet" type="text/css">
 		<script src="../js/loadInitEditor.js"></script>
 		<script src="../js/manageSelf.js"></script>
-		<script src="../js/manageSelfQuestion.js"></script>
+		<!--使用分页功能的页面引用如下js-->
+		<script src="../js/MyPager.js"></script>
+		<script src="../js/SelfTopic.js"></script>
 	</head>
 	<body>
+		<!--存放页数信息，以便于分页显示-->
+		<div>
+			<input type="hidden" id="pageHidden" value="<?php echo $page; ?>"/>
+			<input type="hidden" id="keywordHidden" value="<?php echo $keyword; ?>"/>
+		</div>
 		<div class="container-fluid">
 			<header id="manageHeader">
 				<?php include(__DIR__."/../View/manageHeader.php"); ?>
@@ -28,10 +41,10 @@
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
 					<div class="selfManageMenu">	
-						<form class="form-search input-append pull-left">
-							<input class="input-medium" type="text" placeholder="话题内容" /> 
-							<button type="submit" class="btn">查找</button>
-						</form>
+						<div class="form-search input-append pull-left">
+							<input class="input-medium" type="text" id="keyword" placeholder="话题内容" /> 
+							<button type="submit" class="btn" id="searchTopicBtn" onclick="searchTopic()">查找</button>
+						</div>
 						
 						<ul class="nav nav-tabs pull-right">
 							<li>
@@ -40,42 +53,42 @@
 						</ul>
 					</div>
 					<div class="selfTableDiv">
-						<table class="table selfTable">		
-						<thead>
-							<tr>
-								<th>提问者</th>
-								<th>提问日期</th>
-								<th>话题类型</th>
-								<th>话题内容</th>
-								<th>详情</th>
-								<th>删除</th>
-							</tr>							
-						</thead>
-						<tbody>
-							<tr>
-								<td>
-									山外山
-								</td>
-								<td>
-									2018/7/9
-								</td>
-								<td>
-									IT类
-								</td>
-								<td>
-									软件必须修复所有bug之后才开始发布吗？
-								</td>
-								<td>
-									<button class="btn-link detailsBtn">查看详情</button>
-								</td>								
-								<td>
-									<button class="btn-link">删除</button>
-								</td>
-							</tr>							
-						</tbody>
-					</table>
+						<table class="table" id="topicsTable">		
+							<thead>
+								<tr>
+									<th>提问者</th>
+									<th>提问日期</th>
+									<th>话题类型</th>
+									<th>话题内容</th>
+									<th>公开/不公开</th>
+									<th>删除</th>
+								</tr>							
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+										山外山
+									</td>
+									<td>
+										2018/7/9
+									</td>
+									<td>
+										IT类
+									</td>
+									<td>
+										<a target='_blank' href='../forum/topicDetails.php?topicId=话题Id'>软件必须修复所有bug之后才开始发布吗？</a>
+									</td>						
+									<td>
+										<button class="btn btn-warning" value="话题Id">不公开</button>
+									</td>
+									<td>
+										<button class="btn btn-danger" value="话题Id">删除</button>
+									</td>
+								</tr>							
+							</tbody>
+						</table>
 					</div>
-					<div class="pagination">
+					<div class="pagination" id="paginationDiv">
 						<ul>
 							<li>
 								<a href="#">上一页</a>
@@ -104,55 +117,18 @@
 				
 			</div>			
 			
-			<div class="row-fluid detailsDiv">
+			<!--<div class="row-fluid detailsDiv">
 				<div class="span12 mainContent">
-					<div class="row-fluid ">
-						<ul class="nav nav-tabs pull-right">
-							<li>
-								<button class="btn-link listBtn">返回话题列表</button>
-							</li>
-						</ul>
-						<article class="articleDetail">
-							<h4>软件必须修复所有bug之后才开始发布吗？</h4>
-							<p><span>提问者：山外山</span></p>
-							<section>
-								<ul>
-									<li>
-										<span>天外天：</span>
-										<span>
-											不是，软件的bug往往难以全部修复，可以在容许几个不影响主要业务的bug
-										的情况下让软件运行下去
-										</span>
-										<ul>
-											<li>
-												<span>水中水：</span>
-												<span>
-													是的，我也觉得可以在软件没有修复所有bug的时候上线
-												</span>
-											</li>
-										</ul>
-									</li>
-									<li>
-										<span>天外天：</span>
-										<span>
-											不是，软件的bug往往难以全部修复，可以在容许几个不影响主要业务的bug
-										的情况下让软件运行下去
-										</span>
-										<ul>
-											<li>
-												<span>水中水：</span>
-												<span>
-													是的，我也觉得可以在软件没有修复所有bug的时候上线
-												</span>
-											</li>
-										</ul>
-									</li>
-								</ul>								
-							</section>
-						</article>
-					</div>						
+					<ul class="nav nav-tabs pull-right">
+						<li>
+							<button class="btn-link" id="returnListBtn">返回话题列表</button>
+						</li>
+					</ul>
+					<?php include(__DIR__."/../View/topicDetails.php"); ?>
 				</div>
-			</div>
+			</div>-->
+			
+			
 			
 			<div class="row-fluid createDiv">
 				<div class="span12 mainContent">
@@ -165,13 +141,16 @@
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputTopicType">话题类型</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputTopicType" placeholder="话题类型">
+							      	<!--<input type="text" id="inputTopicType" placeholder="话题类型">-->
+							      	<select id="inputTopicType">
+							      		<option>话题类型</option>
+							      	</select>
 							    </div>
 						  	</div>
 						  	<div class="control-group">
-						  		<label class="control-label" for="inputTopicContent">问题简述</label>
+						  		<label class="control-label" for="inputTopicContent">话题简述</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputTopicContent" placeholder="问题简述">
+							      	<input type="text" id="inputTopicContent" placeholder="话题简述">
 							    </div>
 						  	</div>
 							
@@ -260,7 +239,7 @@
 			
 			<footer id="manageFooter">
 				<?php include(__DIR__."/../View/manageFooter.php"); ?>
-			</footer>	
+			</footer>
 				
 		</div>		
 	</body>

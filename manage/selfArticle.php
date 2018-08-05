@@ -1,3 +1,8 @@
+<?php
+	//获取问题页数，用于分页显示
+	$page=$_REQUEST['page']??1;
+	$keyword=$_REQUEST['keyword']??"";
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -15,10 +20,16 @@
 		<script src="../external/google-code-prettify/prettify.js"></script>
 		<link href="../css/manageSelf.css" rel="stylesheet" type="text/css">
 		<script src="../bootstrap-wysiwyg.js"></script>
-	    <script src="../js/manageSelf.js"></script>
 	    <script src="../js/loadInitEditor.js"></script>
+	    <script src="../js/MyPager.js"></script>
+	    <script src="../js/SelfArticle.js"></script>
 	</head>
 	<body>
+		<!--存放页数信息，以便于分页显示-->
+		<div>
+			<input type="hidden" id="pageHidden" value="<?php echo $page; ?>"/>
+			<input type="hidden" id="keywordHidden" value="<?php echo $keyword; ?>"/>
+		</div>
 		<div class="container-fluid">
 			<header id="manageHeader">
 				<?php include(__DIR__."/../View/manageHeader.php"); ?>
@@ -27,10 +38,10 @@
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
 					<div class="selfArticleManageMenu">	
-						<form class="form-search input-append pull-left">
-							<input class="input-medium" type="text" placeholder="文章标题/标签/内容" /> 
-							<button type="submit" class="btn">查找</button>
-						</form>
+						<div class="form-search input-append pull-left">
+							<input class="input-medium" id="keyword" type="text" placeholder="文章标题/标签/内容" /> 
+							<button type="submit" class="btn" onclick="searchArticles()">查找</button>
+						</div>
 						
 						<ul class="nav nav-tabs pull-right">
 							<li>
@@ -39,7 +50,7 @@
 						</ul>
 					</div>
 					<div class="selfArticleTableDiv">
-						<table class="table selfArticleTable">		
+						<table class="table" id="selfArticleTable">		
 						<thead>
 							<tr>
 								<th>标题</th>
@@ -48,8 +59,7 @@
 								<th>发布者</th>
 								<th>文章大小</th>
 								<th>文章标签</th>
-								<th>公开可见</th>
-								<th>内容详情</th>		
+								<th>发布</th>	
 								<th>删除</th>		
 							</tr>							
 						</thead>
@@ -72,44 +82,18 @@
 								</td>
 								<td>
 									贫穷，富贵，道德，正义，诱惑，犯罪
-								</td>
-								<!--<td>
-										最近我们看了一部电影，叫做“我不是药神”，讲述主人公为了延续一千多名慢粒白血病患者的生命，
-									不惜从印度进口违禁药，最后被警方抓到判刑的故事。如果正义和法律不能两全，我们到底是做守法奉公
-									的好公民呢，还是做坚持正义的救世主呢？
-								</td>-->
-								<!--<td>
-										最近我们看了一部电影，叫做“我不是药神”，讲述主人公为了延续一千多名慢粒白血病患者的生命，
-									不惜从印度进口违禁药，最后被警方抓到判刑的故事。如果正义和法律不能两全，我们到底是做守法奉公
-									的好公民呢，还是做坚持正义的救世主呢？而我想到的不仅仅是这个问题，还有，一个救世主能够做多久呢？
-										如果问题不能从根本上得到解决，那么救世主被关进监狱以后，等待患者的也就只有死路一条了。
-									从经济学的角度来看，格列宁处于一种药物的垄断地位，所以它才敢把药物的价格定到天价，让患者只需几个
-									月的时间就倾家荡产。
-										所以源头上来说，只有在这种药被足够有道德的人掌握，并且以合理的定价出售，或者
-									是当这种药可以被其他药厂以其他不侵权的制药方式制作的其他药物代替的时候，形成一种存在竞争的市场，
-									药物的价格才会合理化。
-										普通人是不可能组织大量人力物力去开发新药的，这是一个以经济为中心的社会，然而在每个人都在想
-									努力赚钱的同时，很多仁义道德诚信都在被背弃。然而即便是想去做研究的人，他们也有家人，要生活下去，
-									也需要钱，所以他们就不得不为了生存去做可以让他们快点赚到钱的工作。
-										影片的最后提到了政府的参与让药价低了下来。然而，为什么我们总要在付出足够多的生命的代价之后，
-									才能开始醒悟一点呢？
-								</td>-->				
+								</td>				
 								<td>
-									<div class="switch" data-on-label="公开" data-off-label="不公开">
-									    <input type="checkbox" checked />
-									</div>
-								</td>
+									<button class="btn btn-success">发布文章</button>
+								</td>			
 								<td>
-									<button class="btn-link detailsBtn">查看详情</button>
-								</td>								
-								<td>
-									<button class="btn-link">删除</button>
+									<button class="btn btn-danger">删除</button>
 								</td>
 							</tr>							
 						</tbody>
 					</table>
 					</div>
-					<div class="pagination">
+					<div class="pagination" id="paginationDiv">
 						<ul>
 							<li>
 								<a href="#">上一页</a>
@@ -146,10 +130,11 @@
 								<button class="btn-link listBtn">返回文章列表</button>
 							</li>
 						</ul>
-						<article class="articleDetail">
-							<h4>穷且益坚，不坠青云之志</h4>
-							<p><span>作者：山外山</span></p>
-							<section>
+						<article id="articleDetail">
+							<h4 id="detailsTitle">穷且益坚，不坠青云之志</h4>
+							<p id="detailsLabel">标签：<span>电影观后感</span></p>
+							<p id="detailsAuthor">作者：<span>山外山</span></p>
+							<section id="detailsContent">
 								<p>
 									最近我们看了一部电影，叫做“我不是药神”，讲述主人公为了延续一千多名慢粒白血病患者的生命，
 								不惜从印度进口违禁药，最后被警方抓到判刑的故事。如果正义和法律不能两全，我们到底是做守法奉公
@@ -205,12 +190,6 @@
 							    <div class="controls">
 							    	<input type="text" id="inputLabel" placeholder="文章标签">
 							    </div>
-							</div>
-						    <div class="control-group">
-						    	<label class="control-label" for="inputIsPublic">是否公开</label>
-						    	<div class="controls selectSex">
-						    		<input type="checkbox" checked />
-						    	</div>							  		
 							</div>
 							
 							<!--下面是关于超文本编辑器的部分-->
@@ -286,7 +265,7 @@
 							</div>
 							<div class="control-group">
 							    <div class="controls">
-							      	<button type="submit" class="btn btn-info" id="createArticleBtn">创建文章</button>
+							      	<button type="submit" class="btn btn-info" onclick="writeArticle()" id="createArticleBtn">创建文章</button>
 							      	<button type="submit" class="btn btn-warning" id="cancleBtn">取消</button>
 							    </div>
 							</div>

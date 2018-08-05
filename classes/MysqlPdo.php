@@ -32,6 +32,20 @@
 			return $result;
 		}
 		/**
+		 * 为分页查询提供专用函数，因为limit后面的参数只能通过bindParam方式传递
+		 * 但是引出一个明显问题，不能给sql语句传送灵活的数组参数了
+		 */
+		function getQueryResultForPager($sql,$startRow=1){
+			if($this->pdo==null){
+				$this->initPdo();
+			}
+			$stmt=$this->pdo->prepare($sql);
+			$stmt->bindParam(":startRow",$startRow,PDO::PARAM_INT);
+			$stmt->execute();
+			$result=$stmt->fetchAll(PDO::FETCH_ASSOC);
+			return $result;
+		}
+		/**
 		 * 这个方法和上面基本一样，但是他会返回一个对象
 		 */
 		function getQueryResultToClass($sql,$className,$paraArr=null){

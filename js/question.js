@@ -31,7 +31,7 @@ function getAllQuestion(){
 			result.forEach(function(value,index){
 				questionList+="<tr>";
 				questionList+="<td><img src='../img/wangsai.jpg'></td>";
-				questionList+="<td><p><button class='btn-link' value='"+value.questionId+"' onClick='getQuestionDetails(this)'>"+value.content+"</button></p>";
+				questionList+="<td><p><a class='btn-link' href='questionDetails.php?questionId="+value.questionId+"'>"+value.content+"</a></p>";
 				questionList+="<p><span>"+value.questionType+"</span></p></td>";
 				questionList+="<td><p>贡献</p><p><img src='../img/liuchenghua.jpg'></p></td>";
 				questionList+="</tr>";

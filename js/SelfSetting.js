@@ -61,12 +61,12 @@ function loadUserInfo(){
 					$("#inputUsername").val(value.username);
 					$("#inputEmail").val(value.email);
 					if(value.sex==1){
-						$("#optionsRadios1").attr("checked",true);
-						$("#optionsRadios2").attr("checked",false);
+						$("#optionsRadios1").prop("checked",true);
+						$("#optionsRadios2").prop("checked",false);
 					}
 					else{
-						$("#optionsRadios1").attr("checked",false);
-						$("#optionsRadios2").attr("checked",true);
+						$("#optionsRadios1").prop("checked",false);
+						$("#optionsRadios2").prop("checked",true);
 					}
 					var jobHtml="<option value='"+value.job+"'>"+value.job+"</option>";
 					$("#inputJob").html(jobHtml);
@@ -77,7 +77,7 @@ function loadUserInfo(){
 					$("#inputOneWord").val(value.oneWord);
 					//用户角色这个地方应该加载所有的角色，需要从tb_user表之外的其他表获得，这里我先暂且不加载
 					//用户角色是不能让用户自己修改的，所以直接将内容读取并显示出来
-					
+					$("#inputUserRole").text(value.roles);
 					//将用户头像以路径形式保存在数据库中，并将图片保存在UploadImages/heading目录下面
 					$("#userHeadingImg").attr("src",value.heading);
 				});
