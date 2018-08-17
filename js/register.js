@@ -74,7 +74,15 @@ $(function(){
 	$('#province').on('change',function(){
 		getCityList();
 	});
+	
 });
+
+/**
+ * 显示用户协议信息
+ */
+function showUserProtocol(){
+	$("#dialogModal").modal("show");
+}
 
 /**
  * 检测用户是否同意了合同

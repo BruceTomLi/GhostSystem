@@ -38,7 +38,7 @@
 		
 		<div class="footerP">
 			<p>
-				Copyright © 0与1网 | 鄂ICP备00000000号
+				Copyright © 0与1网 | 鄂ICP备00000000号, All Rights Reserved
 			</p>
 		</div>				
 	</div>

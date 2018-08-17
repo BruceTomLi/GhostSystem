@@ -95,8 +95,8 @@
 							    <div class="controls">
 							      <label class="checkbox">
 							        <input type="checkbox" id="isAgree"> 我同意
-							        <a href="#">用户协议</a>
-							        <a href="#" style="margin-left:30px;">已有账号？</a>
+							        <button class="btn-link" onclick="showUserProtocol()">用户协议</button>
+							        <a href="login.php" style="margin-left:30px;">已有账号？</a>
 							      </label>
 							      <span id="agreeChk"></span>
 							    </div>
@@ -133,6 +133,42 @@
 					<?php include("View/loginRegisterFooter.php"); ?>
 				</div>
 			</div>
+			
+			<!--模态窗体，显示一个对话框-->
+			<div id="dialogModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			 	<div class="modal-header">
+			    	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			    	<h3 id="myModalLabel">用户协议</h3>
+			  	</div>
+			  	<div class="modal-body">
+			    	<p>当您申请用户时，表示您已经同意遵守本规章。</p>
+			    	
+						<p>欢迎您加入本站点参与交流和讨论，本站点为社区，为维护网上公共秩序和社会稳定，请您自觉遵守以下条款：</p>
+					
+						<p>一、不得利用本站危害国家安全、泄露国家秘密，不得侵犯国家社会集体的和公民的合法权益，不得利用本站制作、复制和传播下列信息：</p>
+						　<p>（一）煽动抗拒、破坏宪法和法律、行政法规实施的；</p>
+						　<p>（二）煽动颠覆国家政权，推翻社会主义制度的；</p>
+						　<p>（三）煽动分裂国家、破坏国家统一的；</p>
+						　<p>（四）煽动民族仇恨、民族歧视，破坏民族团结的；</p>
+						　<p>（五）捏造或者歪曲事实，散布谣言，扰乱社会秩序的；</p>
+						　<p>（六）宣扬封建迷信、淫秽、色情、赌博、暴力、凶杀、恐怖、教唆犯罪的；</p>
+						　<p>（七）公然侮辱他人或者捏造事实诽谤他人的，或者进行其他恶意攻击的；</p>
+						　<p>（八）损害国家机关信誉的；</p>
+						　<p>（九）其他违反宪法和法律行政法规的；</p>
+						　<p>（十）进行商业广告行为的。</p>
+						
+						<p>二、互相尊重，对自己的言论和行为负责。</p>
+						<p>三、禁止在申请用户时使用相关本站的词汇，或是带有侮辱、毁谤、造谣类的或是有其含义的各种语言进行注册用户，否则我们会将其删除。</p>
+						<p>四、禁止以任何方式对本站进行各种破坏行为。</p>
+						<p>五、如果您有违反国家相关法律法规的行为，本站概不负责，您的登录信息均被记录无疑，必要时，我们会向相关的国家管理部门提供此类信息。</p>
+			 	</div>
+			  	<div class="modal-footer">
+			    	<button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
+			    	<button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">我知道了</button>
+			  	</div>
+			</div>
 		</div>
 	</body>
 </html>
+
+
