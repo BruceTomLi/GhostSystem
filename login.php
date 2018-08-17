@@ -40,7 +40,7 @@
 							        	<a href="#">忘记密码</a>
 							      	</label>-->
 							      <br />
-							      <button type="submit" class="btn" id="loginBtn">登录</button>
+							      <button type="submit" class="btn btn-success" id="loginBtn">登录</button>
 							    </div>
 							  </div>
 							</div>
