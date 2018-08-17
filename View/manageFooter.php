@@ -1,6 +1,6 @@
 <div class="footerP" id="manageFooterDetails">
 	<p>
-		Copyright © Ghost中文网 | 京ICP备11008151号 | 京公网安备11010802014853
+		Copyright © 0与1网 | 鄂ICP备00000000号
 	</p>
 	
 	<link rel="stylesheet" type="text/css" href="../css/questionFooter.css" />
