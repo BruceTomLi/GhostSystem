@@ -12,17 +12,29 @@
 		 * 写文章
 		 */
 		public function writeArticle(){
-			$title=$_REQUEST['title'];
-			$author=$_REQUEST['author'];
-			$label=$_REQUEST['label'];
-			$content=$_REQUEST['content']??"";
-			$size=strlen($content);
-			$infoArray=array("title"=>$title,"author"=>$author,"label"=>$label,"content"=>$content,"size"=>$size);
-			
-			$writeArticleCount=$this->author->writeArticle($infoArray);
-			$resultArr=array("writeArticleCount"=>$writeArticleCount);
-			$result=json_encode($resultArr);
-			return $result;
+			$token=$_REQUEST['token']??"";
+			if($token==$_SESSION['token']){
+				//传入的内容过多就截断
+				$title=substr(trim($_REQUEST['title']??""),0,50);
+				$author=substr(trim($_REQUEST['author']??""),0,25);
+				$label=substr(trim($_REQUEST['label']??""),0,50);
+				$content=$_REQUEST['content']??"";
+				$size=strlen($content);
+				if($size<20000){
+					$infoArray=array("title"=>$title,"author"=>$author,"label"=>$label,"content"=>$content,"size"=>$size);
+					
+					$writeArticleCount=$this->author->writeArticle($infoArray);
+					if(is_numeric($writeArticleCount)){
+						$writeArticleCount=array("writeArticleCount"=>$writeArticleCount);
+					}			
+					return json_encode($writeArticleCount);
+				}else{
+					return json_encode(urlencode("文章内容长度超过上限（最多1W字）"));
+				}
+				
+			}else{
+				return json_encode(urlencode("该请求被认为是骇客CSRF攻击"));
+			}
 		}
 		
 		/**
@@ -49,8 +61,7 @@
 		/**
 		 * 加载作者一篇文章的详情
 		 */
-		public function loadArticleDetails(){
-			$articleId=$_REQUEST['articleId'];
+		public function loadArticleDetails($articleId){			
 			$articleDetails=$this->author->loadArticleDetails($articleId);
 			$resultArr=array("articleDetails"=>$articleDetails);
 			return json_encode($resultArr,true);
@@ -87,28 +98,44 @@
 		}
 		 
 		 
-		public function selectAction(){			
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="writeArticle"){
-				return $this->writeArticle();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadSelfArticles"){
-				return $this->loadSelfArticles();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryArticlesByKeyword"){
-				return $this->queryArticlesByKeyword();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadArticleDetails"){
-				return $this->loadArticleDetails();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfArticle"){
-				return $this->deleteSelfArticle();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="publishSelfArticle"){
-				return $this->publishSelfArticle();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="cancelPublishSelfArticle"){
-				return $this->cancelPublishSelfArticle();
-			}
+		public function selectAction(){
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->author->isUserLogon()){
+					//可以执行的action
+					if($this->author->hasAuthority(WriteArticle)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="writeArticle"){
+							return $this->writeArticle();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadSelfArticles"){
+							return $this->loadSelfArticles();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryArticlesByKeyword"){
+							return $this->queryArticlesByKeyword();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadArticleDetails"){
+							return $this->loadArticleDetails();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfArticle"){
+							return $this->deleteSelfArticle();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="publishSelfArticle"){
+							return $this->publishSelfArticle();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="cancelPublishSelfArticle"){
+							return $this->cancelPublishSelfArticle();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
+			}			
 		}
 	}
 	

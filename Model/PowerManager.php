@@ -13,31 +13,21 @@
 		 * 只提供权限的说明信息供权限管理员进行修改
 		 */
 		function changeAuthorityInfo($authorityName,$note){
-			if($this->isUserLogon()){
-				global $pdo;
-				$paraArr=array(":note"=>$note,":name"=>$authorityName);
-				$sql="update tb_authority set note=:note where name=:name";
-				$affectRow=$pdo->getUIDResult($sql,$paraArr);
-				return $affectRow;
-			}
-			else{
-				return "未登录系统，无法进行该操作";
-			}
+			global $pdo;
+			$paraArr=array(":note"=>$note,":name"=>$authorityName);
+			$sql="update tb_authority set note=:note where name=:name";
+			$affectRow=$pdo->getUIDResult($sql,$paraArr);
+			return $affectRow;
 		}
 		
 		/**
 		 * 加载权限信息
 		 */
 		function loadAuthorityInfo(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$sql="select * from tb_authority";
-				$authorities=$pdo->getQueryResult($sql);
-				return $authorities;
-			}
-			else{
-				return "未登录系统，无法进行该操作";
-			}
+			global $pdo;
+			$sql="select * from tb_authority";
+			$authorities=$pdo->getQueryResult($sql);
+			return $authorities;
 		}
 		
 	}

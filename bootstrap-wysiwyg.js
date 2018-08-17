@@ -22,6 +22,18 @@
 			img=e.target.result;
 			var formData=new FormData();
 			formData.append("file",fileInfo);
+			//获取正文信息，分析出用户上传的图片数，并进行限制
+			var content=$.trim($("#editor").html());
+			// //匹配图片（g表示匹配所有结果i表示区分大小写）
+			var imgReg =new RegExp("img([sS]*)","gi");
+			var arr = content.match(imgReg);
+			if(arr!=null){
+				formData.append("imgCount",fileInfo);
+				if(arr.length>=5){
+					alert("上传图片数量不得大于5张");
+					return;
+				}
+			}			
 			$.ajax({
 				url:'../classes/ImageHandler.php',//这个URL是由调用这个js文件的文件位置决定的
 				method:'POST',
@@ -30,8 +42,18 @@
 				processData:false,
 				cache:false,
 				success:function(data){
-					var data=$.trim(data);
-					loader.resolve(data);
+					var result=$.trim(data);
+					//判断返回结果是否为数组，如果不是，就直接打印错误信息，并结束
+					var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+					if(pattern.test(result)){
+						result=$.parseJSON(result);
+						loader.resolve(result.newPath);
+					}else{
+						result=(decodeURI(result));
+						var reg=/\"/g;
+						alert(result.replace(reg,''));
+						return;
+					}
 				}
 			});
 		};

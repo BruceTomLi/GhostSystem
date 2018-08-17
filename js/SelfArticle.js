@@ -1,10 +1,11 @@
 $(function(){
 	//将菜单项的当前页菜单增加选中样式
 	$("#menuUl>li>a[href='selfArticle.php']").parent().addClass("active");	
-	
+		
 	//加载用户文章信息
 	//loadSelfArticles();
 	queryArticlesByKeyword();
+	
 	
 	loadKeyword();//分页的搜索信息加载时，要在输入框中写入关键字
 	
@@ -22,9 +23,15 @@ $(function(){
 	});
 	
 	$("#cancleBtn").on("click",function(){
+		$("#inputTitle").val("");
+		$("#inputAuthor").val("");
+		$("#inputLabel").val("");
+		$("#editor").html("");
 		showList();
 	});
 });
+
+
 
 function loadKeyword(){
 	var keyword=$("#keywordHidden").attr("value");
@@ -64,24 +71,32 @@ function showCreate(){
  * 写文章
  */
 function writeArticle(){
-	var title=$("#inputTitle").val();
+	var title=$.trim($("#inputTitle").val());
 	var author=$("#inputAuthor").val();
 	var label=$("#inputLabel").val();
 	var content=$("#editor").html();
+	var token=$("#token").val();
 	$.post(
 		"../Controller/SelfArticleController.php",
-		{action:"writeArticle",title:title,author:author,label:label,content:content},
+		{action:"writeArticle",token:token,title:title,author:author,label:label,content:content},
 		function(data){
 			var result=$.trim(data);
-			result=$.parseJSON(result);
-			if(result.writeArticleCount==1){
-				//loadSelfArticles();
-				queryArticlesByKeyword();
-				showList();
-				alert("文章保存成功");				
-			}
-			else{
-				alert(result.writeArticleCount);
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);
+				if(result.writeArticleCount==1){
+					//loadSelfArticles();
+					queryArticlesByKeyword();
+					showList();
+					alert("文章保存成功");				
+				}
+				else{
+					alert("创建文章失败");
+				}
+			}else{
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);

@@ -55,10 +55,10 @@
 							    	</div>							  		
 								</div>
 								<div class="control-group">
-							  		<label class="control-label" for="inputJob">职业</label>
+							  		<label class="control-label" for="inputJob">行业</label>
 								    <div class="controls">
 								    	<select id="inputJob">
-								    		<option value="empty">--</option>
+								    		<!--<option value="">--</option>-->
 								    	</select>
 								    </div>
 								</div>
@@ -91,8 +91,6 @@
 							      	<button class="btn btn-info" id="changeUserBtn">修改信息</button>
 							      	<button class="btn-link btn-warning" id="changeHeadingBtn">修改头像</button>
 							      	<button class="btn-link btn-warning" id="changePasswordBtn">修改密码</button>
-							      	<input type="hidden" id="isNameOk" value="false"/>
-							      	<input type="hidden" id="isEmailOk" value="false"/>
 							    </div>
 							</div>
 						</div>
@@ -107,7 +105,7 @@
 								<legend>修改我的头像</legend>
 							</div>
 							<div class="control-group">
-						  		<label class="control-label" for="inputUserHeading">用户头像</label>
+						  		<label class="control-label" for="inputUserHeading">用户头像(小于100KB)</label>
 						    	<div class="controls">
 						      		<input type="file" id="inputUserHeading" name="heading" /><br>
 						      		<img id="userHeadingImg" src="../UploadImages/fishing.jpg" />

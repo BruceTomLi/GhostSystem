@@ -30,13 +30,28 @@
 		 * 选择要执行哪个动作
 		 */
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAuthorityInfo"){
-				return $this->loadAuthorityInfo();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->powerManager->isUserLogon()){
+					//可以执行的action
+					if($this->powerManager->hasAuthority(AuthorityManage)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAuthorityInfo"){
+							return $this->loadAuthorityInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeAuthorityInfo"){
+							return $this->changeAuthorityInfo();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeAuthorityInfo"){
-				return $this->changeAuthorityInfo();
-			}
-			return "没有发送合适的请求";
 		}
 	}
 

@@ -8,75 +8,55 @@
 		 */
 		private $articleManager;
 		
-		function setUp(){
+		//执行每个测试前先登录系统
+		function setUp(){			
 			$this->articleManager=new ArticleManager();
+			$username=UserName;
+			$password=Password;
+			$this->articleManager->login($password, $username);
+		}
+		//执行每个测试后退出系统
+		function tearDown(){
+			$this->articleManager->logout();
 		}
 		
 		/**
 		 * 测试加载所有的文章
+		 * 需要登录
 		 */
 		function testLoadAllArticles(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->articleManager->login($password, $username);
-			
 			$articles=$this->articleManager->loadAllArticles();
-			$this->assertTrue(count($articles)>0);
-			
-			//测试完之后退出登录
-			$this->articleManager->logout();	
+			$this->assertTrue(is_array($articles) && count($articles)>0);				
 		}
 		
 		/**
 		 * 测试禁用文章
+		 * 需要登录
 		 */
 		function testDisableArticle(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->articleManager->login($password, $username);
-			
 			$articleId=ArticleId;
 			$articleCount=$this->articleManager->disableArticle($articleId);
-			$this->assertTrue($articleCount>0);
-			
-			//测试完之后退出登录
-			$this->articleManager->logout();
+			$this->assertTrue(is_numeric($articleCount) && $articleCount>0);			
 		}
 		
 		/**
 		 * 测试启用文章
+		 * 需要登录
 		 */
 		function testEnableArticle(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->articleManager->login($password, $username);
-			
 			$articleId=ArticleId;
 			$articleCount=$this->articleManager->enableArticle($articleId);
-			$this->assertTrue($articleCount>0);
-			
-			//测试完之后退出登录
-			$this->articleManager->logout();
+			$this->assertTrue(is_numeric($articleCount) && $articleCount>0);
 		}
 		
 		/**
 		 * 测试删除文章
+		 * 选用登录
 		 */
 		function testDeleteArticle(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->articleManager->login($password, $username);
-			
 			$articleId=ArticleIdForDelete;
 			$deleteArticleRow=$this->articleManager->deleteArticle($articleId);
-			$this->assertTrue($deleteArticleRow>=0);
-			
-			//测试完之后退出登录
-			$this->articleManager->logout();
+			$this->assertTrue(is_numeric($deleteArticleRow) && $deleteArticleRow>=0);
 		}
 		
 		/**
@@ -84,7 +64,7 @@
 		 */
 		function testGetArticleList(){
 			$articles=$this->articleManager->getArticleList();
-			$this->assertTrue(count($articles)>0);
+			$this->assertTrue(is_array($articles) && count($articles)>0);
 		}
 		
 		/**
@@ -92,23 +72,37 @@
 		 */
 		function testGetArticlesCount(){
 			$articlesCount=$this->articleManager->getArticlesCount();
-			$this->assertTrue($articlesCount>0);
+			echo $articlesCount;
+			$this->assertTrue(is_numeric($articlesCount) && $articlesCount>0);
 		}
 		/**
 		 * 测试通过关键字检索文章
+		 * 需要登录
 		 */
 		function testQueryArticlesByKeyword(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->articleManager->login($password, $username);
-			
 			$keyword="二维";
 			$articles=$this->articleManager->queryArticlesByKeyword($keyword);
-			$this->assertTrue(count($articles)>0);
-			
-			//测试完之后退出登录
-			$this->articleManager->logout();	
+			$this->assertTrue(is_array($articles) && count($articles)>0);
 		}
+		
+		/**
+		 * 测试获取文章相关的问题
+		 */
+		function testGetQuestionOfArticle(){
+			$articleTitle="测试";
+			$questionInfo=$this->articleManager->getQuestionOfArticle($articleTitle);
+			$this->assertTrue(is_array($questionInfo) && $questionInfo[0]["questionCount"]>=0);
+		}
+		
+		/**
+		 * 测试获取文章相关的话题
+		 * 
+		 */
+		function testGetTopicOfArticle(){
+			$articleTitle="测试";
+			$topicInfo=$this->articleManager->getTopicOfArticle($articleTitle);
+			$this->assertTrue(is_array($topicInfo) && $topicInfo[0]["topicCount"]>=0);
+		}
+			
 	}
 ?>

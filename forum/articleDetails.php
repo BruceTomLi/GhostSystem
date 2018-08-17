@@ -1,9 +1,20 @@
 <?php
 	require_once(__DIR__."/../Controller/SelfArticleController.php");
+	require_once(__DIR__."/../Controller/ArticleController.php");
 	$selfArticleController=new SelfArticleController();
-	$result=$selfArticleController->loadArticleDetails();
+	$articleId=$_REQUEST['articleId']??"";
+	$result=$selfArticleController->loadArticleDetails($articleId);
 	$resultArr=json_decode($result,true);
-	$articleDetails=$resultArr["articleDetails"][0];
+	$articleDetails=$resultArr["articleDetails"][0]??"";
+	$articleTitle=$articleDetails['title']??"";
+	//获取文章相关的问题和话题信息
+	$articleController=new ArticleController();
+	$questionInfo=$articleController->getQuestionOfArticle($articleTitle);
+	$questionCount=$questionInfo[0]["questionCount"];
+	$questionId=$questionInfo[0]["questionId"]??"";
+	$topicInfo=$articleController->getTopicOfArticle($articleTitle);
+	$topicCount=$topicInfo[0]["topicCount"];
+	$topicId=$topicInfo[0]["topicId"]??"";
 ?>
 <!DOCTYPE html>
 <html>
@@ -32,12 +43,26 @@
 					<div class="row-fluid detailsDiv">
 						<div class="span9 mainContent">
 							<article id="articleDetail">
-								<h4 id="detailsTitle"><?php echo $articleDetails['title']; ?></h4>
-								<p id="detailsLabel">标签：<span><?php echo $articleDetails['label']; ?></span></p>
-								<p id="detailsAuthor">作者：<span><?php echo $articleDetails['author']; ?></span></p>
+								<h4 id="detailsTitle"><?php echo $articleDetails['title']??"未获取到文章标题"; ?></h4>
+								<p id="detailsLabel">标签：<span><?php echo $articleDetails['label']??"未获取到文章标签"; ?></span></p>
+								<p id="detailsAuthor">作者：<span><?php echo $articleDetails['author']??"未获取到文章作者"; ?></span></p>
 								<section id="detailsContent">
 									<?php
-										echo $articleDetails['content'];
+										echo $articleDetails['articleContent']??"未获取到文章内容";
+										if(isset($articleDetails['articleContent'])){
+											if($questionCount>0){
+												echo "<br><br><p><a target='_blank' href='questionDetails.php?questionId={$questionId}'>查看文章的问题</a></p>";
+											}
+											else{
+												echo "<br><br><p><a target='_blank' href='../manage/selfQuestion.php?articleTitle={$articleTitle}'>创建文章的问题</a></p>";
+											}
+											if($topicCount>0){
+												echo "<p><a target='_blank' href='topicDetails.php?topicId={$topicId}'>查看文章的话题</a></p>";	
+											}
+											else{
+												echo "<p><a target='_blank' href='../manage/selfTopic.php?articleTitle={$articleTitle}'>创建文章的话题</a></p>";
+											}
+										}										
 									?>
 									<!--<p>
 										最近我们看了一部电影，叫做“我不是药神”，讲述主人公为了延续一千多名慢粒白血病患者的生命，

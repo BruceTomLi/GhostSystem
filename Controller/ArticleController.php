@@ -63,23 +63,58 @@
 		}
 		
 		/**
+		 * 获取文章相关的问题信息，被php页直接调用
+		 */
+		function getQuestionOfArticle($articleTitle){
+			$questionInfo=$this->articleManager->getQuestionOfArticle($articleTitle);
+			return $questionInfo;
+		}
+		
+		/**
+		 * 获取文章相关的话题信息，被php页直接调用
+		 */
+		function getTopicOfArticle($articleTitle){
+			$topicInfo=$this->articleManager->getTopicOfArticle($articleTitle);
+			return $topicInfo;
+		}
+		
+		/**
 		 * 选择要执行哪个动作
 		 */
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAllArticles"){
-				return $this->loadAllArticles();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryArticlesByKeyword"){
-				return $this->queryArticlesByKeyword();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableArticle"){
-				return $this->disableArticle();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableArticle"){
-				return $this->enableArticle();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteArticle"){
-				return $this->deleteArticle();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有管理作文的权限才能执行相应的action
+				if($this->articleManager->isUserLogon()){
+					//文章管理员可以执行的action
+					if($this->articleManager->hasAuthority(ArticleManage)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAllArticles"){
+							return $this->loadAllArticles();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryArticlesByKeyword"){
+							return $this->queryArticlesByKeyword();
+						}
+					}
+					//文章管理员和作者可以执行的action
+					else if($this->articleManager->hasAuthority(WriteArticle) || $this->articleManager->hasAuthority(ArticleManage)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableArticle"){
+							return $this->disableArticle();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableArticle"){
+							return $this->enableArticle();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteArticle"){
+							return $this->deleteArticle();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

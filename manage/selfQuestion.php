@@ -2,6 +2,7 @@
 	//获取问题页数，用于分页显示
 	$page=$_REQUEST['page']??1;
 	$keyword=$_REQUEST['keyword']??"";
+	$articleTitle=$_REQUEST['articleTitle']??"";
 ?>
 <!DOCTYPE html>
 <html>
@@ -32,6 +33,7 @@
 		<div>
 			<input type="hidden" id="pageHidden" value="<?php echo $page; ?>"/>
 			<input type="hidden" id="keywordHidden" value="<?php echo $keyword; ?>"/>
+			<input type="hidden" id="articleTitleHidden" value="<?php echo $articleTitle; ?>"/>
 		</div>
 		<div class="container-fluid">
 			<header id="manageHeader">
@@ -150,13 +152,13 @@
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputQuestionContent">问题简述</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputQuestionContent" placeholder="问题简述">
+							      	<textarea id="inputQuestionContent" placeholder="最多200字"></textarea>
 							    </div>
 						  	</div>
 							
 							<!--下面是关于超文本编辑器的部分-->
 							<div class="control-group">
-								<label class="control-label" for="inputDescription">问题详细描述</label>
+								<label class="control-label" for="inputDescription">问题详情(最多1K字)</label>
 								<div class="controls">
 									<div class="editorDiv">
 										<div id="alerts"></div>
@@ -209,9 +211,12 @@
 									      	</div>
 									      
 									      	<div class="btn-group">
-										        <a class="btn" title="Insert picture (or just drag & drop)" id="pictureBtn"><i class="icon-picture"></i></a>
-										        <input type="file" data-role="magic-overlay" data-target="#pictureBtn" data-edit="insertImage" />
+										        <a class="btn" title="Insert picture (or just drag & drop)" id="pictureBtn">
+										        	<input type="file" data-role="magic-overlay" style="width:40px;height: 35px;position: relative;left: -2px;top:-2px;" data-edit="insertImage" />
+										        	<i class="icon-picture"></i>										        	
+										        </a>										        
 									      	</div>
+									      	
 									      	<div class="btn-group">
 										        <a class="btn" data-edit="undo" title="Undo (Ctrl/Cmd+Z)"><i class="icon-undo"></i></a>
 										        <a class="btn" data-edit="redo" title="Redo (Ctrl/Cmd+Y)"><i class="icon-repeat"></i></a>
@@ -220,7 +225,7 @@
 									    </div>
 									
 									  	<div id="editor">
-									      	Go ahead&hellip;
+									      	
 									  	</div>
 									</div>
 								</div>

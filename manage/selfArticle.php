@@ -52,7 +52,7 @@
 					<div class="selfArticleTableDiv">
 						<table class="table" id="selfArticleTable">		
 						<thead>
-							<tr>
+							<tr>								
 								<th>标题</th>
 								<th>作者</th>
 								<th>发布日期</th>
@@ -122,7 +122,8 @@
 				
 			</div>			
 			
-			<div class="row-fluid detailsDiv">
+			<!--改成了使用超链接在一个页面中查看文章详情，所以下面注释的代码变为无效-->
+			<!--<div class="row-fluid detailsDiv">
 				<div class="span12 mainContent">
 					<div class="row-fluid ">
 						<ul class="nav nav-tabs pull-right">
@@ -163,7 +164,7 @@
 						</article>
 					</div>						
 				</div>
-			</div>
+			</div>-->
 			
 			<div class="row-fluid createDiv">
 				<div class="span12 mainContent">
@@ -176,25 +177,25 @@
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputTitle">标题</label>
 						    	<div class="controls">
-							      	<input type="text" id="inputTitle" placeholder="标题">
+							      	<input type="text" id="inputTitle" placeholder="最多50字">
 							    </div>
 						  	</div>
 						  	<div class="control-group">
 						  		<label class="control-label" for="inputAuthor">作者</label>
 						    	<div class="controls">
-						      		<input type="text" id="inputAuthor" placeholder="作者">
+						      		<input type="text" id="inputAuthor" placeholder="最多25字">
 						    	</div>
 						  	</div>
 							<div class="control-group">
 								<label class="control-label" for="inputLabel">文章标签</label>
 							    <div class="controls">
-							    	<input type="text" id="inputLabel" placeholder="文章标签">
+							    	<input type="text" id="inputLabel" placeholder="最多50字">
 							    </div>
 							</div>
 							
 							<!--下面是关于超文本编辑器的部分-->
 							<div class="control-group">
-								<label class="control-label" for="inputCpntent">正文内容</label>
+								<label class="control-label" for="inputCpntent">正文内容(少于1万字)</label>
 								<div class="controls">
 									<div class="editorDiv">
 										<div id="alerts"></div>
@@ -247,8 +248,11 @@
 									      	</div>
 									      
 									      	<div class="btn-group">
-										        <a class="btn" title="Insert picture (or just drag & drop)" id="pictureBtn"><i class="icon-picture"></i></a>
-										        <input type="file" data-role="magic-overlay" data-target="#pictureBtn" data-edit="insertImage" />
+										       <a class="btn" title="Insert picture (or just drag & drop)" id="pictureBtn">
+										        	<input type="file" data-role="magic-overlay" style="width:42px;height: 33px;position: relative;left: -2px;top:-2px;" data-edit="insertImage" />
+										        	<i class="icon-picture"></i>										        	
+										        </a>
+										        
 									      	</div>
 									      	<div class="btn-group">
 										        <a class="btn" data-edit="undo" title="Undo (Ctrl/Cmd+Z)"><i class="icon-undo"></i></a>
@@ -258,7 +262,6 @@
 									    </div>
 									
 									  	<div id="editor">
-									      	Go ahead&hellip;
 									  	</div>
 									</div>
 								</div>

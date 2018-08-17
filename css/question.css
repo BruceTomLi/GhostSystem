@@ -48,3 +48,24 @@
 .detailsDiv{
 	display: none;
 }
+
+.searchResultDiv{
+	display: none;
+}
+
+/**
+ * 下面是屏幕宽度小于767px时的样式设置
+ */
+@media only screen and (max-width:767px ) {
+	.questionTable td img{
+		width: auto;
+		height: auto;
+		min-width:20px;
+		min-height: 20px;
+	}
+	
+	.btn-group{
+		margin-top:3px;
+		margin-bottom: 3px;
+	}
+}

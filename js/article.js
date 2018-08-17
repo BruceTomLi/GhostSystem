@@ -134,7 +134,7 @@ function queryArticlesByKeyword(){
 				articlesHtml+="<td>"+value.author+"</td>";
 				var publishDate=(value.publishDate==""||value.publishDate==null)?"未发布":value.publishDate;
 				articlesHtml+="<td class='detailsInfo'>"+publishDate+"</td>";
-				articlesHtml+="<td class='detailsInfo'>"+value.publisherName+"</td>";
+				articlesHtml+="<td class='detailsInfo'><a target='_blank' href='../forum/person.php?userId="+value.publisher+"'>"+value.publisherName+"</a></td>";
 				articlesHtml+="<td class='detailsInfo'>"+value.size+" bytes</td>";
 				articlesHtml+="<td class='detailsInfo'>"+value.label+"</td>";
 				if(value.publishDate=="" || value.publishDate==null){

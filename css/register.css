@@ -85,8 +85,8 @@
 		background: -o-linear-gradient(blue, lightblue); /* Opera 11.1 - 12.0 */
 		background: -moz-linear-gradient(blue, lightblue); /* Firefox 3.6 - 15 */
 		background: linear-gradient(blue, lightblue); /* 标准的语法 */
-		/*这里的10px和"更多资料"的定位有关，火狐里面不加就显示有问题，在谷歌里面不加也没问题*/
-		padding-bottom: 7px; 
+		/*这里的10px和"更多资料"的定位有关，火狐里面不加就显示有问题，在谷歌里面不加也没问题；后来发现给html加height为100%的样式可以解决该问题*/
+		/*padding-bottom: 7px;*/ 
 	}
 	.register{
 	    background-color: #fff;

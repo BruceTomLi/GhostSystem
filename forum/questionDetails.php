@@ -1,9 +1,6 @@
 <?php
 	// 这个页面会在论坛页，用户个人问题页，问题管理员页中被使用，所以把它抽象出来，避免在三个地方重复
-	require_once(__DIR__."/../Controller/QuestionController.php");
-	$questionController=new QuestionController();
-	//获取到结果就可以了，之后让后台的js去解析结果
-	$result=$questionController->getQuestionDetails();
+	$questionId=$_REQUEST['questionId']??"";
 ?>
 
 <!DOCTYPE html>
@@ -21,7 +18,9 @@
 </head>
 <body>
 	<!--将php中获取的问题信息存入隐藏字段，然后让js解析它，避免将大量php的代码解析逻辑写到html页面上-->
-	<div><input id="questionDetailsHidden" type="hidden" value='<?php echo $result; ?>'/></div>
+	<div>
+		<input id="questionIdHidden" type="hidden" value='<?php echo $questionId; ?>'/>
+	</div>
 	<div class="container-fluid">
 		<div class="row-fluid">
 			<div class="span12" id="questionHeader">
@@ -55,8 +54,8 @@
 								<button class="btn btn-warning" id="cancelAddComment" onClick='cancelAddComment(this)'>取消</button>
 							</div>
 						</section>	
-						<section id="questionAnswers">
-							<h4>4个回复</h4>
+						<div id="questionAnswers">
+							<!--<h4>4个回复</h4>
 							<hr>
 							<ul>
 								<li>
@@ -94,8 +93,8 @@
 										</div>										
 									</ul>
 								</li>				
-							</ul>	
-						</section>
+							</ul>	-->
+						</div>
 						
 					</div>
 					

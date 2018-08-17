@@ -23,7 +23,24 @@ $(function(){
 	//加载话题分类，用于用户在创建话题时选择
 	loadTopicTypes();
 	
+	//如果是从文章页创建话题，就显示创建的div
+	createTopicByArticleTitle();
+	
 });
+
+/**
+ * 如果是从文章页创建话题，就显示创建的div
+ */
+function createTopicByArticleTitle(){
+	var articleTitle=$("#articleTitleHidden").attr("value");
+	if(articleTitle!=""){
+		$("#inputTopicContent").val(articleTitle);
+		$(".detailsDiv").hide();
+		$(".queryDiv").hide();
+		$(".editDiv").hide();
+		$(".createDiv").show();
+	}
+}
 
 function loadKeyword(){
 	var keyword=$("#keywordHidden").attr("value");
@@ -34,18 +51,27 @@ function createNewTopic(){
 	var inputTopicType=$("#inputTopicType").val();
 	var inputTopicContent=$("#inputTopicContent").val();
 	var topicDescription=$("#editor").html();
+	var token=$("#token").val();
 	$.post(
 		"../Controller/SelfTopicController.php",
-		{action:"createNewTopic",topicType:inputTopicType,
+		{action:"createNewTopic",token:token,topicType:inputTopicType,
 			topicContent:inputTopicContent,topicDescription:topicDescription},
 		function(data){
 			var result=$.trim(data);
-			if(result==1){
-				alert("话题添加成功");
-				getSelfTopicList();
-			}
-			else{
-				alert("话题添加失败，请检查是否为重复话题"+result);
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);
+				if(result.count==1){
+					alert("话题添加成功");
+					getSelfTopicList();
+				}
+				else{
+					alert("话题添加失败，请检查是否话题标题重复了");
+				}
+			}else{
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);

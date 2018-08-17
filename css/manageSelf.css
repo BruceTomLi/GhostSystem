@@ -29,6 +29,41 @@ legend{
 	display: none;
 }
 
+.dropdown-menu a {
+  cursor: pointer;
+}
+
+/*修改密码的区域默认隐藏*/
+#changePwdDiv,#changeHeadingDiv{
+	display:none;
+}
+
+/*用户角色的显示*/
+#inputUserRole{
+	padding-top:5px;
+}
+
+/*用户图片显示尺寸，已经可以在普通大小屏幕的手机上和pc上正常显示了*/
+#userHeadingImg{
+	max-width: 300px;
+	max-height: 300px;
+}
+
+/*控制我的粉丝表中用户图片的大小*/
+#fansTable img{
+	max-width: 50px;
+	max-height: 50px;
+}
+
+/*为了兼顾很小屏幕的手机*/
+@media only screen and (max-width: 320px) {
+	/*用户图片显示尺寸*/
+	#userHeadingImg{
+		max-width: 200px;
+		max-height: 200px;
+	}
+}
+
 /* this CSS is not part of the widget, it is here just as an example of the demo page styling.... Don't copy this one, roll your own. One
  * of the key things about the widget is that it allows you to do your own styling!
  */
@@ -68,37 +103,6 @@ div[data-role="editor-toolbar"] {
   user-select: none;
 }
 
-.dropdown-menu a {
-  cursor: pointer;
-}
-
-/*修改密码的区域默认隐藏*/
-#changePwdDiv,#changeHeadingDiv{
-	display:none;
-}
-
-/*用户角色的显示*/
-#inputUserRole{
-	padding-top:5px;
-}
-
-/*用户图片显示尺寸，已经可以在普通大小屏幕的手机上和pc上正常显示了*/
-#userHeadingImg{
-	max-width: 300px;
-	max-height: 300px;
-}
-
-/*控制我的粉丝表中用户图片的大小*/
-#fansTable img{
-	max-width: 50px;
-	max-height: 50px;
-}
-
-/*为了兼顾很小屏幕的手机*/
-@media only screen and (max-width: 320px) {
-	/*用户图片显示尺寸*/
-	#userHeadingImg{
-		max-width: 200px;
-		max-height: 200px;
-	}
+#pictureBtn,#pictureBtn>a{
+	cursor: default;
 }

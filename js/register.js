@@ -1,4 +1,4 @@
-var isNameOk=false,isEmailOk=false,isPwdOk=false,isValcodeOk=false,isAgree=false;
+// var isNameOk=false,isEmailOk=false,isPwdOk=false,isValcodeOk=false,isAgree=false;
 $(function(){
 	var isShow = false;//没显示	
 	
@@ -9,10 +9,15 @@ $(function(){
 		$('.moreForm').toggle();
 		if(!isShow) {
 			$('.moreInfo').html('收起');
+			var height=$(window).height()+100;
+			$("html").css("height",height+"px");
 		}else {
 			$('.moreInfo').html('更多资料');
+			var height=$(window).height();
+			$("html").css("height",height+"px");
 		}
 		isShow = !isShow;
+		
 	});	
 	/**
 	 * 单击注册按钮时注册
@@ -75,29 +80,30 @@ $(function(){
  * 检测用户是否同意了合同
  */
 function chkIsUserAgree(){
-	if($('#isAgree').is(':checked')){
-		isAgree=true;
+	if(!$('#isAgree').is(':checked')){
+		$("#agreeChk").text("必须同意用户协议才能注册").removeClass().addClass('chkError');
+		return false;
+	}else{
+		$("#agreeChk").html("<img src='img/action_check.png' />");
+		return true;
 	}
-	else{
-		isAgree=false;
-	}	
 }
 /**
  * 检测所有输入的信息
  */
 function chkAllInput(){
-	chkInputValcode();
-	chkIsUserAgree();
+	var isValcodeOk=chkInputValcode();
+	var isAgree=chkIsUserAgree();
+	var isNameOk=chkInputUserName();
+	var isEmailOk=chkInputEmail();
+	var isPwdOk=chkInputPassword();
 	var flag = isNameOk && isEmailOk && isPwdOk && isValcodeOk && isAgree;
 	if(flag) {			
-		$('#regChk').text("你的信息可以提交了").removeClass().addClass('chkSuccess');
-	}else {	
+		$('#regChk').html("<img src='img/action_check.png' />");
+		register();
+	}else {
 		$('#regChk').text("您的信息未通过校验").removeClass().addClass('chkWarning');
-		chkInputUserName();
-		chkInputEmail();
-		chkInputPassword();
 	}
-	return flag;
 }
 /**
  * 显示验证码
@@ -126,14 +132,16 @@ function chkInputUserName(){
 	var username=$.trim($('#inputUsername').val());
 	if(username==''){
 		$('#userNameChk').text("用户名不能为空").removeClass().addClass("chkError");	
-		isNameOk=false;
+		// isNameOk=false;
+		return false;
 	}
 	else if(username.length<2 || username.length>20){
 		$('#userNameChk').text("2<用户名长度<20").removeClass().addClass("chkError");	
-		isNameOk=false;
+		// isNameOk=false;
+		return false;
 	}
 	else{
-		chkUsername();		
+		return chkUsername();		
 	}
 }
 /**
@@ -145,14 +153,16 @@ function chkInputEmail(){
 	email.match(emailreg);
 	if(email==''){
 		$('#emailChk').text("邮箱不能为空").removeClass().addClass("chkError");	
-		isEmailOk=false;
+		// isEmailOk=false;
+		return false;
 	}
 	else if(email.match(emailreg)==null){
 		$('#emailChk').text("邮箱格式不正确").removeClass().addClass("chkError");	
-		isEmailOk=false;
+		// isEmailOk=false;
+		return true;
 	}
 	else{
-		chkEmail();
+		return chkEmail();
 	}
 }
 
@@ -190,7 +200,7 @@ function chkInputPassword2(){
 				pwd.match(/([\s\S]*)[-`=\\\[\];',./~!@#$%^&*()_+|{}:"<>?]+\d+[a-zA-Z]+([\s\S]*)/)||
 				pwd.match(/([\s\S]*)[-`=\\\[\];',./~!@#$%^&*()_+|{}:"<>?]+[a-zA-Z]+\d+([\s\S]*)/))
 				{
-					$('#passwordChk').html("密码等级：强").removeClass().addClass("chkSuccess");	
+					$('#passwordChk').html("<img src='img/action_check.png' />");
 				}
 			}
 			return true;
@@ -219,7 +229,8 @@ function chkInputPassword(){
 	
 	if(pwd.length<6 || pwd.length>18){
 		$('#passwordChk').html("6<密码长度<18").removeClass().addClass("chkError");
-		isPwdOk=false;
+		// isPwdOk=false;
+		return false;
 	}
 	else{
 		switch(status) {
@@ -230,13 +241,14 @@ function chkInputPassword(){
 				$('#passwordChk').html("密码等级：中").removeClass().addClass("chkWarning");	
 				break;
 			case 3:
-				$('#passwordChk').html("密码等级：强").removeClass().addClass("chkSuccess");	
+				$('#passwordChk').html("<img src='img/action_check.png' />");	
 				break;
 			default:
 				$('#passwordChk').html("密码强度未知").removeClass().addClass("chkError");	
 				break;
 		}
-		isPwdOk=true;
+		// isPwdOk=true;
+		return true;
 	}
 }
 /**
@@ -244,12 +256,14 @@ function chkInputPassword(){
  */
 function chkInputValcode(){
 	if($('#inputValcode').val().toLowerCase()==$('#valcodeValue').val().toLowerCase()){
-		$('#valcodeChk').html('验证码输入正确').removeClass().addClass("chkSuccess");
-		isValcodeOk=true;
+		$('#valcodeChk').html("<img src='img/action_check.png' />");
+		// isValcodeOk=true;
+		return true;
 	}
 	else{
 		$('#valcodeChk').html('验证码输入错误').removeClass().addClass("chkError");
-		isValcodeOk=false;
+		// isValcodeOk=false;
+		return false;
 	}	
 }
 /**
@@ -260,18 +274,12 @@ function getJobList (){
 		url:'Controller/RegisterController.php',
 		data:{action:"getJobList"},
 		success: function(data) {
-			data = $.trim(data);
-			//$('#inputJob').html(data);
-			//alert(data);
-			data=$.parseJSON(data);
+			var result = $.trim(data);
+			result=$.parseJSON(result);
 			var jobLists="<option value='empty'>--</option>";
-			data.forEach(function(value,index){
-				// alert(value.job);
-				//jobLists+="<option value='"+value.job"'>"+value.job+"</option>";
+			result.jobs.forEach(function(value,index){
 				jobLists=jobLists+"<option value='"+value.job+"'>"+value.job+"</option>";
-				//jobLists=jobLists+"abc"+value.job;
 			});
-			//alert("<select>"+jobLists+"</select>");
 			$('#inputJob').html(jobLists);
 		}		
 	});
@@ -336,13 +344,12 @@ function register(){
 		function(data){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
-			if(result.affectRow==1){
+			if(result.affectRow>=1){//需要同时插入用户信息和用户角色信息，所以影响的行数应该是2行
 				alert("注册成功,请登录");
 				location="login.php";
 			}
 			else{
-				alert(result.affectRow);
-				chkAllInput();
+				alert("注册失败");
 			}
 		}
 	);
@@ -352,23 +359,30 @@ function register(){
  * 下面的函数检测用户名是否重名
  */
 function chkUsername(){
+	var isNameOk=false;
 	//去除用户名前后的空格
 	var username=$.trim($('#inputUsername').val());
-	$.get(
-		'Controller/RegisterController.php',
-		{action:"chkUsername",username:username},
-		function(data){
+	$.ajax({
+		url:'Controller/RegisterController.php',
+		async:false,
+		data:{action:"chkUsername",username:username},
+		success:function(data){
 			data=$.trim(data);
 			if(data==1){
 				$('#userNameChk').html("用户名重复").removeClass().addClass("chkError");
+				// isNameOk=false;
 				isNameOk=false;
+				// return false;
 			}
 			else{
-				$('#userNameChk').html("用户名可用").removeClass().addClass("chkSuccess");	
+				$('#userNameChk').html("<img src='img/action_check.png' />");
+				// isNameOk=true;
+				// return true;
 				isNameOk=true;
 			}
 		}		
-	);
+	});
+	return isNameOk;
 }
 
 
@@ -390,7 +404,7 @@ function chkUsername2(){
 				$('#userNameChk').html("用户名重复").removeClass().addClass("chkError");
 			}
 			else{
-				$('#userNameChk').html("用户名可用").removeClass().addClass("chkSuccess");				
+				$('#userNameChk').html("<img src='img/action_check.png' />");			
 	}
 	//console.log(a)
 }
@@ -399,22 +413,26 @@ function chkUsername2(){
  * 下面的函数检测邮箱是否重复，因为用户可以通过邮箱登录系统，所以用户邮箱也应当是唯一的
  */
 function chkEmail(){
-	isEmailOk=false;
+	var isEmailOk=false;
 	//去除用户名前后的空格
 	var email=$.trim($('#inputEmail').val());
-	$.get(
-		'Controller/RegisterController.php',
-		{action:"chkEmail",email:email},
-		function(data){
+	$.ajax({
+		url:'Controller/RegisterController.php',
+		async:false,
+		data:{action:"chkEmail",email:email},
+		success:function(data){
 			data=$.trim(data);
 			if(data==1){
 				$('#emailChk').html("邮箱已被使用").removeClass().addClass("chkError");
 				isEmailOk=false;
+				// return false;
 			}
 			else{
-				$('#emailChk').html("邮箱格式可用").removeClass().addClass("chkSuccess");
+				$('#emailChk').html("<img src='img/action_check.png' />");
 				isEmailOk=true;
+				// return true;
 			}
 		}
-	);
+	});
+	return isEmailOk;
 }

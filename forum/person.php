@@ -4,21 +4,23 @@
 	//需要获取用户传过来的用户Id，根据用户Id获取相应的用户信息
 	$personController=new PersonController();
 	$personalInfo=$personController->getUserBaseInfoByUserId();
+	$userIdHidden="";
 	if(!empty($personalInfo["personalInfo"])){		
 		$username=$personalInfo["personalInfo"][0]["username"];
-		$userId=$personalInfo["personalInfo"][0]["userId"];
+		$userId=$personalInfo["personalInfo"][0]["userId"]??"";
+		$userIdHidden=$userId;
 		$userId="'".$userId."'";
 		$heading=$personalInfo["personalInfo"][0]['heading'];
 		$heading="'".$heading."'";
-		$email=$personalInfo["personalInfo"][0]['email'];
+		// $email=$personalInfo["personalInfo"][0]['email'];
 		$oneWord=$personalInfo['personalInfo'][0]['oneWord'];
 		$sex=$personalInfo["personalInfo"][0]['sex']=="1"?"男":"女";
 	}
 	
-	//获取用户的登录状态，如果用户没登录，不显示邮箱信息
-	if(!$personController->isUserLogon()){
-		$email="登录之后可以看到邮箱";
-	}		
+	//获取用户的登录状态，如果用户没登录，不显示邮箱信息；为防止用户被骚扰，不显示邮箱
+	// if(!$personController->isUserLogon()){
+		// $email="登录之后可以看到邮箱";
+	// }		
 ?>
 <!DOCTYPE html>
 <html>
@@ -31,9 +33,14 @@
 		<script src="../js/jquery-1.9.1.js"></script>
 		<script src="../bootstrap/js/bootstrap.min.js"></script>
 		<link href="../css/person.css" rel="stylesheet" type="text/css">
+		<script src="../js/echarts.min.js"></script>
 		<script src="../js/person.js"></script>
 	</head>
 	<body>
+		<!--存放用户Id信息，便于js获取并处理-->
+		<div>
+			<input type="hidden" id="userIdHidden" value="<?php echo $userIdHidden??""; ?>"/>
+		</div>
 		<div class="container-fluid">
 			<div class="row-fluid">
 				<div class="span12" id="questionHeader">
@@ -53,7 +60,8 @@
 								<p><img src=<?php echo $heading??""; ?> /></p>
 								<p>称呼：<span><?php echo $username??"未获取到名称"; ?></span></p>
 								<p>性别：<span><?php echo $sex??"未获取到性别"; ?></span></p>
-								<p>邮箱：<span><?php echo $email??"未获取到邮箱"; ?></span></p>
+								<!--为防止用户被骚扰，不显示邮箱-->
+								<!--<p>邮箱：<span><?php echo $email??"未获取到邮箱"; ?></span></p>-->
 								<p>一句话介绍：<span><?php echo $oneWord??"未获取到一句话介绍"; ?></span></p>
 								<?php
 									if(!$personController->hasUserFollowedUser()){
@@ -62,7 +70,10 @@
 								<?php
 									}
 									else{
-								?>
+								?>										
+										<div id="userInfoCountDiv" style="height:320px;margin: 0;text-align: center;">
+											<div id="userInfoCountContainer" style="height: 100%"></div>											
+										</div>
 										<p><button class="btn btn-warning" id="cancelfollowTa" onclick="cancelFollowUser(this)" value=<?php echo $userId??""; ?>>取消关注Ta</button></p>
 								<?php
 									}
@@ -75,7 +86,7 @@
 							</section>
 						</div>
 						<div class="span3 right-nav">
-							<?php include(__DIR__."/../View/personRightNav.php"); ?>
+							<?php include(__DIR__."/../View/questionRightNav.php"); ?>
 						</div>
 					</div>
 				</div>

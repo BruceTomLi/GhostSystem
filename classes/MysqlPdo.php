@@ -1,4 +1,5 @@
 <?php
+	require_once("SafeForXss.php");
 	class MysqlPdo{
 		private $pdo=null;
 		/**
@@ -29,6 +30,27 @@
 			$stmt=$this->pdo->prepare($sql);
 			$stmt->execute($paraArr);
 			$result=$stmt->fetchAll(PDO::FETCH_ASSOC);
+			return $result;
+		}
+		
+		/**
+		 * 这个函数是根据上面的函数改编的，可以执行带有返回参数的存储过程，并且返回输出参数结果
+		 * $output和存储过程中使用的参数名要保持一致
+		 */
+		function getQueryResultForStoredProceduresOutput($sql,$outputArr,$paraArr=null){
+			if($this->pdo==null){
+				$this->initPdo();
+			}
+			$stmt=$this->pdo->prepare($sql);
+			$stmt->execute($paraArr);
+			//为了可以使用输出多个参数的存储过程，这里使用数组，遍历数组中的参数，加入到sql语句中
+			$querySql="select ";
+			foreach($outputArr as $key=>$value){
+				$querySql.=$value.",";
+			}
+			$querySql=substr($querySql,0,strlen($querySql)-1);//去除最后的逗号
+			
+			$result=$this->pdo->query($querySql)->fetchAll(PDO::FETCH_ASSOC);
 			return $result;
 		}
 		/**
@@ -65,8 +87,23 @@
 				$this->initPdo();
 			}
 			$stmt=$this->pdo->prepare($sql);
-			$stmt->execute($paraArr);
+			//对数组中的字符进行转义保存，需要使用引用，才会有效果
+			foreach ($paraArr as $key => &$value){
+				//不能对session表中的字段转义，否则会出错
+				if(($key!=":id" && $key!=":data")){
+					//对富文本框内容用SafeForXss类进行编码，可以显示超链接和图片
+					if($key==":articleContent" || $key==":topicDescription" 
+						|| $key==":questionDescription" || $key==":noticeContent"){
+						$value=SafeForXss::string_remove_xss(trim($value));
+					}
+					else{//对非富文本内容用htmlspecialchars进行完全转义编码，不显示任何html元素
+						$value=htmlspecialchars(trim($value));
+					}
+				}
+			}
+			$stmt->execute($paraArr);			
 			$affectRows=$stmt->rowCount();
+			unset($paraArr);
 			return $affectRows;
 		}
 		/**

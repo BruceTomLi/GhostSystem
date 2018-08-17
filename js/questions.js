@@ -80,7 +80,7 @@ function queryQuestionsByKeyword(){
 				else{
 					questionList+="<td class='forSelectMulti'><label class='checkbox'><input type='checkbox' value='"+value.questionId+"'></label></td>";
 				}
-				questionList+="<td>"+value.asker+"</td>";
+				questionList+="<td><a target='_blank' href='../forum/person.php?userId="+value.askerId+"'>"+value.asker+"</a></td>";
 				questionList+="<td>"+value.askDate+"</td>";
 				questionList+="<td>"+value.questionType+"</td>";
 				questionList+="<td><a target='_blank' href='../forum/questionDetails.php?questionId="+value.questionId+"'>"+value.content+"</a></td>";

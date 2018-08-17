@@ -19,7 +19,9 @@
 		 * loadUserInfo()会判断用户是否登录，所以不应在Controller里面再进行判断
 		 */
 		function loadUserInfo(){
-			return json_encode($this->user->loadUserInfo());
+			$userInfo=$this->user->loadUserInfo();
+			$resultArr=array("userInfo"=>$userInfo);
+			return json_encode($resultArr);
 		}
 		
 		/**
@@ -58,7 +60,7 @@
 			if ((($_FILES["heading"]["type"] == "image/gif") || ($_FILES["heading"]["type"] == "image/jpeg")
 				|| ($_FILES["heading"]["type"] == "image/png") || ($_FILES["heading"]["type"] == "image/pjpeg")
 				|| ($_FILES["heading"]["type"] == "image/x-png") )
-				&& ($_FILES["heading"]["size"] < 500000))
+				&& ($_FILES["heading"]["size"] < 100000))
 			{
 				if(!empty($fileName) && !empty($realName)){
 					$resultArr=$this->user->uploadSelfHeading($fileName, $realName);
@@ -70,7 +72,7 @@
 				}
 			}
 			else{
-				$resultArr=array("affectRow"=>"您上传的图片类型或者大小不符合规范");
+				$resultArr=array("affectRow"=>"您上传的图片类型或者大小不符合规范，要求使用png，gif，jpg格式，大小<100KB");
 				return json_encode($resultArr);
 			}			
 		}
@@ -79,17 +81,33 @@
 		 * 下面的函数选择用户的请求动作，并给出相应的相应
 		 */
 		function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserInfo"){
-				return $this->loadUserInfo();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeUserInfo"){
-				return $this->changeUserInfo();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeUserPassword"){
-				return $this->changeUserPassword();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="uploadSelfHeading"){
-				return $this->uploadSelfHeading();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->user->isUserLogon()){
+					//可以执行的action
+					if($this->user->hasAuthority(CommenUser)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserInfo"){
+							return $this->loadUserInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeUserInfo"){
+							return $this->changeUserInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="changeUserPassword"){
+							return $this->changeUserPassword();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="uploadSelfHeading"){
+							return $this->uploadSelfHeading();
+						}			
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

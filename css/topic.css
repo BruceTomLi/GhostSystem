@@ -2,15 +2,14 @@ body{
 	background-color: #EEEEEE;
 }
 
-
-#menuBtn ul{
-	display: inline-block;
-}
-
-.left-content{
-	padding: 20px;
+.contentDiv,.searchResultDiv{
 	background-color: #FFFFFF;
 }
+
+.mainContent{
+	padding: 20px;
+}
+
 
 .right-nav{
 	padding: 20px;
@@ -47,24 +46,17 @@ h3{
 	padding-bottom: 10px;
 }
 
-.row-fluid{
-	text-align: center;
-}
 
-.questionTable{
+.topicTable{
 	width:100%;
 	padding:10px 20px;
 }
 
-.questionTable td img{
+.topicTable td img{
 	width:50px;
 	height: 50px;
 }
 
-.questionTable p img{
-	width:25px;
-	height: 25px;
-}
 
 .navTable img{
 	width:40px;
@@ -81,4 +73,25 @@ h3{
 	line-height: 20px;
 	padding-top: 30px;
 	padding-bottom: 30px;	
+}
+
+.pagination{
+	text-align: center;
+}
+
+/**
+ * 下面是屏幕宽度小于767px时的样式设置
+ */
+@media only screen and (max-width:767px ) {
+	.topicTable td img{
+		width: auto;
+		height: auto;
+		min-width:20px;
+		min-height: 20px;
+	}
+	
+	.btn-group{
+		margin-top:3px;
+		margin-bottom: 3px;
+	}
 }

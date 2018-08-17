@@ -12,10 +12,25 @@
 				
 		
 		public function createNewQuestion(){
-			$questionType=$_REQUEST['questionType'];
-			$questionContent=$_REQUEST['questionContent'];
-			$questionDescription=$_REQUEST['questionDescription'];
-			return $this->user->createNewQuestion($questionType, $questionContent, $questionDescription);
+			$token=$_REQUEST['token']??"";
+			if($token==$_SESSION['token']){
+				$questionType=$_REQUEST['questionType']??"";
+				$questionContent=substr(trim($_REQUEST['questionContent']??""),0,250);
+				$questionDescription=$_REQUEST['questionDescription'];
+				$size=strlen($questionDescription);
+				if($size<2000){
+					$count=$this->user->createNewQuestion($questionType, $questionContent, $questionDescription);
+					if(is_numeric($count)){
+						$count=array("count"=>$count);
+					}			
+					return json_encode($count);
+				}else{
+					return json_encode(urlencode("问题内容长度超过上限（最多1K字）"));
+				}
+			}else{
+				return json_encode(urlencode("该请求被认为是骇客CSRF攻击"));
+			}
+			
 		}
 		
 		public function getSelfQuestionList(){
@@ -71,26 +86,42 @@
 		}
 		
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="createNewQuestion"){
-				return $this->createNewQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfQuestionList"){
-				return $this->getSelfQuestionList();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchQuestionListByContentOrDescription"){
-				return $this->searchQuestionListByContentOrDescription();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfQuestion"){
-				return $this->disableSelfQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableSelfQuestion"){
-				return $this->enableSelfQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfQuestion"){
-				return $this->deleteSelfQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadQuestionTypes"){
-				return $this->loadQuestionTypes();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->user->isUserLogon()){
+					//可以执行的action
+					if($this->user->hasAuthority(CommenUser)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="createNewQuestion"){
+							return $this->createNewQuestion();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfQuestionList"){
+							return $this->getSelfQuestionList();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchQuestionListByContentOrDescription"){
+							return $this->searchQuestionListByContentOrDescription();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfQuestion"){
+							return $this->disableSelfQuestion();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableSelfQuestion"){
+							return $this->enableSelfQuestion();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfQuestion"){
+							return $this->deleteSelfQuestion();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadQuestionTypes"){
+							return $this->loadQuestionTypes();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 <?php
 	require_once(__DIR__.'/../classes/MysqlPdo.php');
+	require_once("ConstData.php");
 	require_once(__DIR__.'/../classes/SessionDBC.php');
+	require_once(__DIR__.'/../classes/ImgCompress.php');
 	class User{
 		// 下面的属性在程序中都用不到，我先注释起来
 		// private $id;
@@ -14,6 +16,10 @@
 		// private $oneWord;
 		// private $heading;
 				
+		function __construct(){
+			//在构造函数中设置时间格式，避免在其他地方重复设置
+			date_default_timezone_set('PRC'); 
+		}
 		/**
 		 * 下面的注册方法是填写完整信息之后进行注册
 		 * 成功注册信息时，返回true，否则返回false
@@ -26,7 +32,8 @@
 					$userId=uniqid('',true);
 					$paraArr=array(':userId'=>$userId,':username'=>$username,':password'=>$password,':email'=>$email,
 						':sex'=>$sex,':job'=>$job,':province'=>$province,':city'=>$city,':oneWord'=>$oneWord,':heading'=>$heading,':enable'=>"1");
-					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading,:enable)";
+					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading,:enable);";
+					$sql.="insert into tb_userrole values(:userId,(select roleId from tb_role where name='普通用户'));";
 					$affectRow=$pdo->getUIDResult($sql,$paraArr);
 					return $affectRow;
 				}
@@ -94,22 +101,19 @@
 		 * 下面的函数实现用户登录功能，用户登录只需要输入邮箱或者用户名，之后输入密码就可以了
 		 */
 		function login($password,$emailOrUsername){
-			if($this->chkLoginInfo($password,$emailOrUsername)){
-				$password=md5($password);
-				global $pdo;
-				$paraArr=array(":password"=>$password,":emailOrUsername"=>$emailOrUsername);
-				$sql="select username from tb_user where password=:password and (email=:emailOrUsername or username=:emailOrUsername) and enable=1;";
-				$result=$pdo->getOneFiled($sql, 'username',$paraArr);
-				if(!empty($result)){
-					$_SESSION['username']=$result;
-					session_write_close();//执行这个函数，php会马上执行session的“写入”和“关闭”函数
-				}				
-				return $result;
-			}
+			$password=md5($password);
+			global $pdo;
+			$paraArr=array(":password"=>$password,":emailOrUsername"=>$emailOrUsername);
+			$sql="select username from tb_user where password=:password and (email=:emailOrUsername or username=:emailOrUsername) and enable=1;";
+			$result=$pdo->getOneFiled($sql, 'username',$paraArr);
+			if(!empty($result)){
+				$_SESSION['username']=$result;
+				session_write_close();//执行这个函数，php会马上执行session的“写入”和“关闭”函数
+				return "success";
+			}				
 			else{
-				return null;
-			}
-			
+				return "用户名不存在或者已经被禁用";
+			}			
 		}
 		/**
 		 * 下面的函数检测用户的登录信息是否合法，虽然已经在js里面进行过校验，但是
@@ -132,27 +136,45 @@
 		/**
 		 * 下面定义一个函数用来让用户创建一个新的问题
 		 */
-		function createNewQuestion($questionType,$questionContent,$questionDescription){			
-			if($this->isUserLogon() && !$this->isQuestionRepeat($questionContent)){
-				global $pdo;
-				$questionId=uniqid("",true);
-				$asker=$_SESSION['username'];
-				//需要先获取到登录用户的用户ID，tb_question的数据库中需要保存用户Id而不是用户名，因为用户名虽然唯一但可变
-				//但是这样需要进行两次sql查询，影响性能，我试试将两条sql语句合并成一条				
-				// $paraArr=array(":username"=>$asker);
-				// $sql="select userId from tb_user where username=:username";
-				// $askerId=$pdo->getOneFiled($sql, "userId",$paraArr);
-				
-				$askerDate=date("Y-m-d H:i:s");
-				$paraArr=array(":questionId"=>$questionId,":asker"=>$asker,":askDate"=>$askerDate,":questionType"=>$questionType,
-					":questionContent"=>$questionContent,":questionDescription"=>$questionDescription,":enable"=>"1");
-				$sql="insert into tb_question values(:questionId,(select userId from tb_user where username=:asker),:askDate,:questionType,:questionContent,:questionDescription,:enable)";
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
-			}
-			else{
-				return null;
-			}
+		function createNewQuestion($questionType,$questionContent,$questionDescription){
+			if(!$this->isCreateQuestionOverCount()){
+				if(!$this->isQuestionRepeat($questionContent)){
+					global $pdo;
+					$questionId=uniqid("",true);
+					$asker=$_SESSION['username'];
+					//需要先获取到登录用户的用户ID，tb_question的数据库中需要保存用户Id而不是用户名，因为用户名虽然唯一但可变
+					//但是这样需要进行两次sql查询，影响性能，我试试将两条sql语句合并成一条				
+					// $paraArr=array(":username"=>$asker);
+					// $sql="select userId from tb_user where username=:username";
+					// $askerId=$pdo->getOneFiled($sql, "userId",$paraArr);
+					
+					$askerDate=date("Y-m-d H:i:s");
+					$paraArr=array(":questionId"=>$questionId,":asker"=>$asker,":askDate"=>$askerDate,":questionType"=>$questionType,
+						":questionContent"=>$questionContent,":questionDescription"=>$questionDescription,":enable"=>"1");
+					$sql="insert into tb_question values(:questionId,(select userId from tb_user where username=:asker),:askDate,:questionType,:questionContent,:questionDescription,:enable)";
+					$result=$pdo->getUIDResult($sql,$paraArr);
+					//删除用户多余的图片（文章，话题或者问题中的）
+					$this->deleteUserSpareImages();
+					return $result;
+				}else{
+					return "问题重复了";
+				}
+			}else{
+				return urlencode("今日提问数量已经达到上限");
+			}			
+		}
+		
+
+		/**
+		 * 判断用户今天写的问题是否超过了限制
+		 */
+		function isCreateQuestionOverCount(){
+			global $pdo;
+			$username=$_SESSION['username'];
+			$paraArr=array(":username"=>$username);
+			$sql="call pro_isAskQuestionOverTimes(:username)";
+			$result=$pdo->getOneFiled($sql, "isOverTimes",$paraArr);
+			return $result=="yes"?true:false;
 		}
 		
 		/**
@@ -242,56 +264,41 @@
 		 * 获取用户提出的问题的问题列表
 		 */
 		function getSelfQuestionList($page=1){
-			if($this->isUserLogon()){
-				global $pdo;
-				//获取分页数据
-				$questionsCount=$this->getSelfQuestionCount();
-				$pageTotal=ceil($questionsCount/5);//获取总页数
-				//规范化页数，并返回起始页
-				$startRow=$this->getStartPage($page,$pageTotal);
-				
-				//分页时要用到limit，由于对limit后面的参数（不能用数组参数传值）
-				//在上面进行了限制，可以防止sql注入，所以对于该参数使用字符串拼接
-				$paraArr=array(":asker"=>$_SESSION['username']);
-				$sql="select questionId,:asker as asker,askDate,questionType,content,enable from tb_question where askerId=(select userId from tb_user where username=:asker) limit $startRow,5";
-				$questionList=$pdo->getQueryResult($sql,$paraArr);
-				return $questionList;
-			}
-			else{
-				return "未登录系统，无法进行操作";
-			}
+			global $pdo;
+			//获取分页数据
+			$questionsCount=$this->getSelfQuestionCount();
+			$pageTotal=ceil($questionsCount/5);//获取总页数
+			//规范化页数，并返回起始页
+			$startRow=$this->getStartPage($page,$pageTotal);
+			
+			//分页时要用到limit，由于对limit后面的参数（不能用数组参数传值）
+			//在上面进行了限制，可以防止sql注入，所以对于该参数使用字符串拼接
+			$paraArr=array(":asker"=>$_SESSION['username']);
+			$sql="select questionId,:asker as asker,askDate,questionType,content,enable from tb_question where askerId=(select userId from tb_user where username=:asker) limit $startRow,5";
+			$questionList=$pdo->getQueryResult($sql,$paraArr);
+			return $questionList;
 		}
 		
 		/**
 		 * 获取个人问题的总数
 		 */
 		function getSelfQuestionCount(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$paraArr=array(":logonUser"=>$_SESSION['username']);
-				$sql="select count(*) as questionsCount from tb_question where askerId=(select userId from tb_user where username=:logonUser)";
-				$questionsCount=$pdo->getOneFiled($sql, "questionsCount",$paraArr);
-				return $questionsCount;
-			}
-			else{
-				return "未登录系统，无法进行操作";
-			}
+			global $pdo;
+			$paraArr=array(":logonUser"=>$_SESSION['username']);
+			$sql="select count(*) as questionsCount from tb_question where askerId=(select userId from tb_user where username=:logonUser)";
+			$questionsCount=$pdo->getOneFiled($sql, "questionsCount",$paraArr);
+			return $questionsCount;				
 		}
 		
 		/**
 		 * 下面通过问题的Id获取到问题的详情
 		 */
 		function getQuestionDetailsByQuestionId($questionId){
-			if($this->isUserLogon()){
-				global $pdo;				
-				$paraArr=array(":questionId"=>$questionId);
-				$sql="select * from tb_question where questionId=:questionId";
-				$questionDetails=$pdo->getQueryResult($sql,$paraArr);
-				return $questionDetails;
-			}
-			else{
-				return null;
-			}
+			global $pdo;				
+			$paraArr=array(":questionId"=>$questionId);
+			$sql="select * from tb_question where questionId=:questionId";
+			$questionDetails=$pdo->getQueryResult($sql,$paraArr);
+			return $questionDetails;
 		}
 		
 		/**
@@ -299,43 +306,33 @@
 		 * 单个用户搜索问题的时候，无论问题是否被禁用，都要能搜索出来进行管理
 		 */
 		function getQuestionListByContentOrDescription($keyword,$page=1){
-			if($this->isUserLogon()){
-				global $pdo;
-				//获取分页数据
-				$count=$this->getQuestionListByContentOrDescriptionCount($keyword);
-				$pageTotal=ceil($count/5);//获取总页数
-				//规范化页数，并返回起始页
-				$startRow=$this->getStartPage($page,$pageTotal);
-				
-				$username=$_SESSION['username'];
-				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
-				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select :asker as asker,tq.* from tb_question tq where askerId=(select userId from tb_user where username=:asker) ";
-				$sql.="and (content like :keyword or questionDescription like :keyword) limit $startRow,5";
-				$questionList=$pdo->getQueryResult($sql,$paraArr);
-				return $questionList;
-			}
-			else{
-				return "未登录无法进行操作";
-			}
+			global $pdo;
+			//获取分页数据
+			$count=$this->getQuestionListByContentOrDescriptionCount($keyword);
+			$pageTotal=ceil($count/5);//获取总页数
+			//规范化页数，并返回起始页
+			$startRow=$this->getStartPage($page,$pageTotal);
+			
+			$username=$_SESSION['username'];
+			$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+			$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+			$sql="select :asker as asker,tq.* from tb_question tq where askerId=(select userId from tb_user where username=:asker) ";
+			$sql.="and (content like :keyword or questionDescription like :keyword) limit $startRow,5";
+			$questionList=$pdo->getQueryResult($sql,$paraArr);
+			return $questionList;
 		}
 		
 		/**
 		 * 获取关键字搜索出的问题条数
 		 */
 		function getQuestionListByContentOrDescriptionCount($keyword){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
-				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select count(*) as questionCount from tb_question tq where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or questionDescription like :keyword)";
-				$count=$pdo->getOneFiled($sql,"questionCount",$paraArr);
-				return $count;
-			}
-			else{
-				return "未登录无法进行操作";
-			}
+			global $pdo;
+			$username=$_SESSION['username'];
+			$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+			$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+			$sql="select count(*) as questionCount from tb_question tq where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or questionDescription like :keyword)";
+			$count=$pdo->getOneFiled($sql,"questionCount",$paraArr);
+			return $count;
 		}
 		
 		/**
@@ -344,25 +341,20 @@
 		 * hasAuthority这个参数是给管理员用的，如果判断出用户非问题创建者，但是有问题管理权限，也可以管理问题
 		 */
 		function disableSelfQuestion($questionId,$hasAuthority=false){
-			if($this->isUserLogon()){
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array();
-				if($hasAuthority){
-					$paraArr=array(":questionId"=>$questionId);
-					$sql="update tb_question set enable=0 where questionId=:questionId ";
-				}
-				else{
-					$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
-					$sql="update tb_question set enable=0 where questionId=:questionId ";
-					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
-				}				
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array();
+			if($hasAuthority){
+				$paraArr=array(":questionId"=>$questionId);
+				$sql="update tb_question set enable=0 where questionId=:questionId ";
 			}
 			else{
-				return "禁用问题失败，你没有登录系统";
-			}
+				$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
+				$sql="update tb_question set enable=0 where questionId=:questionId ";
+				$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+			}				
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
 		}
 		
 		/**
@@ -371,36 +363,32 @@
 		 * hasAuthority这个参数是给管理员用的，如果判断出用户非问题创建者，但是有问题管理权限，也可以管理问题
 		 */
 		function enableSelfQuestion($questionId,$hasAuthority=false){
-			if($this->isUserLogon()){
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array();
-				if($hasAuthority){
-					$paraArr=array(":questionId"=>$questionId);
-					$sql="update tb_question set enable=1 where questionId=:questionId ";
-				}
-				else{
-					$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
-					$sql="update tb_question set enable=1 where questionId=:questionId ";
-					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
-				}
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array();
+			if($hasAuthority){
+				$paraArr=array(":questionId"=>$questionId);
+				$sql="update tb_question set enable=1 where questionId=:questionId ";
 			}
 			else{
-				return "启用问题失败，你没有登录系统";
+				$paraArr=array(":questionId"=>$questionId,":logonUser"=>$logonUser);
+				$sql="update tb_question set enable=1 where questionId=:questionId ";
+				$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
 			}
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
 		}
 		
 		/**
 		 * 下面的函数用来让用户评论一个问题
 		 */
 		function commentQuestion($questionId,$content){
-			if($this->isUserLogon()){
+			if(!$this->isUserCommentReplyCountOverTimes()){
 				global $pdo;
 				//向数据库中增加评论信息
 				$commenter=$_SESSION['username'];
 				$commentId=uniqid("",true);
+				
 				$commentDate=date("Y-m-d H:i:s");
 				$paraArr=array(":commentId"=>$commentId,":questionId"=>$questionId,
 					":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content,":enable"=>"1");
@@ -412,10 +400,22 @@
 				$resultArr=array("affectRow"=>$affectRow,"createdComment"=>$comment);				
 				
 				return $resultArr;
-			}
-			else{
-				return null;
-			}
+			}else{
+				return urlencode("今日评论和回复数量已经达到上限");//如果这里不编码，在浏览器中显示就是16进制编码了	
+			}			
+		}
+		
+		/**
+		 * 判断用户当天评论数是否超过了限制
+		 */
+		function isUserCommentReplyCountOverTimes(){
+			global $pdo;
+			//向数据库中增加评论信息
+			$username=$_SESSION['username'];
+			$paraArr=array(":username"=>$username);
+			$sql="call pro_isUserCommentReplyCountOverTimes(:username)";
+			$result=$pdo->getOneFiled($sql, "isOverTimes",$paraArr);
+			return $result=="yes"?true:false;
 		}
 		
 		/**
@@ -452,7 +452,7 @@
 		 * 下面的函数根据评论号删除一个评论
 		 */
 		function disableCommentForQuestion($commentId){
-			if($this->isUserLogon() && $this->isCommentEnable($commentId)){
+			if($this->isCommentEnable($commentId)){
 				global $pdo;
 				$commenter=$_SESSION['username'];
 				$paraArr=array(":commentId"=>$commentId,":commenter"=>$commenter);
@@ -460,9 +460,8 @@
 				$sql="update tb_comment set enable=0 where commentId=:commentId and commenterId=(select if(count(userId)>0,userId,'') from tb_user where username=:commenter)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
-			}
-			else{
-				return 0;
+			}else{
+				return "评论已经被删除";
 			}
 		}
 		
@@ -481,16 +480,18 @@
 		 * 下面的函数给评论添加相应的回复
 		 */
 		function createReplyForComment($fatherReplyId,$commentId,$content){
-			if($this->isUserLogon()){
+			if(!$this->isUserCommentReplyCountOverTimes()){
 				//向数据库中插入新的回复信息
 				global $pdo;
+				
 				$replyer=$_SESSION['username'];
 				$replyId=uniqid("",true);
+				
 				$replyDate=date("Y-m-d H:i:s");
 				$paraArr=array(":replyId"=>$replyId,":fatherReplyId"=>$fatherReplyId,":commentId"=>$commentId,
 					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content,":enable"=>"1");
 				$sql="insert into tb_reply values(:replyId,:fatherReplyId,:commentId,(select userId from tb_user where username=:replyer),:replyDate,:content,:enable)";
-
+	
 				$insertRow=$pdo->getUIDResult($sql,$paraArr);
 				//获取刚插入的回复信息
 				$replyContent=$this->getReplyByReplyId($replyId);
@@ -498,8 +499,9 @@
 				return $resultArr;
 			}
 			else{
-				return null;
+				return urlencode("今日评论和回复数量已经达到上限");
 			}
+			
 		}
 		
 		
@@ -507,11 +509,13 @@
 		 * 下面的函数给评论回复添加相应的回复
 		 */
 		function createReplyForReply($fatherReplyId,$commentId,$content){
-			if($this->isUserLogon()){
+			if(!$this->isUserCommentReplyCountOverTimes()){
 				//向数据库中插入新的回复信息
 				global $pdo;
+				
 				$replyer=$_SESSION['username'];
 				$replyId=uniqid("",true);
+				
 				$replyDate=date("Y-m-d H:i:s");
 				$paraArr=array(":replyId"=>$replyId,":fatherReplyId"=>$fatherReplyId,":commentId"=>$commentId,
 					":replyer"=>$replyer,":replyDate"=>$replyDate,":content"=>$content,":enable"=>"1");
@@ -523,7 +527,7 @@
 				return $resultArr;
 			}
 			else{
-				return null;
+				return urlencode("今日评论和回复数量已经达到上限");
 			}
 		}
 		
@@ -532,16 +536,15 @@
 		 * 下面的函数给评论删除相应的回复
 		 */
 		function disableReplyForComment($replyId){
-			if($this->isUserLogon() && $this->isReplyEnable($replyId)){
+			if($this->isReplyEnable($replyId)){
 				global $pdo;
 				$replyer=$_SESSION['username'];
 				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
 				$sql="update tb_reply set enable=0 where replyId=:replyId and replyerId=(select if(count(userId)>0,userId,'') from tb_user where username=:replyer)";
 				$result=$pdo->getUIDResult($sql,$paraArr);
 				return $result;
-			}
-			else{
-				return 0;
+			}else{
+				return "回复已经被删除";
 			}
 		}
 		
@@ -561,17 +564,12 @@
 		 * 实际上使用的是上面给评论删除回复同样的方法，所以下面的方法用不到
 		 */
 		/*function disableReplyForReply($replyId){
-			if($this->isUserLogon()){
-				global $pdo;
-				$replyer=$_SESSION['username'];
-				$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
-				$sql="update tb_reply set enable=0 where replyId=:replyId and replyerId=(select if(count(userId)>0,userId,'') from tb_user where username=:replyer)";
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
-			}
-			else{
-				return null;
-			}
+			global $pdo;
+			$replyer=$_SESSION['username'];
+			$paraArr=array(":replyId"=>$replyId,":replyer"=>$replyer);
+			$sql="update tb_reply set enable=0 where replyId=:replyId and replyerId=(select if(count(userId)>0,userId,'') from tb_user where username=:replyer)";
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
 		}*/
 		
 		/**
@@ -626,47 +624,44 @@
 		 * 用户登录且打开管理页面时，加载用户信息（通过session中的username）
 		 */
 		function loadUserInfo(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				$paraArr=array(":username"=>$username);
-				//这里不应对密码进行查询，但是要加载角色，为避免复杂逻辑，从视图中加载
-				$sql="select roles,userId,username,email,sex,job,province,city,oneWord,heading from view_usershasroles where username=:username";
-				$result=$pdo->getQueryResult($sql,$paraArr);
-				return $result;
-			}
-			else{
-				return null;
-			}
+			global $pdo;
+			$username=$_SESSION['username'];
+			$paraArr=array(":username"=>$username);
+			//这里不应对密码进行查询，但是要加载角色，为避免复杂逻辑，从视图中加载
+			$sql="select roles,userId,username,email,sex,job,province,city,oneWord,heading from view_usershasroles where username=:username";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
 		}
 		
 		/**
 		 * 下面的函数修改用户自己的信息
 		 */
 		function changeSelfInfo($userInfo){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				$paraArr=array(":username"=>$username,":newUsername"=>$userInfo['username'],":email"=>$userInfo['email'],
-					":sex"=>$userInfo['sex'],":job"=>$userInfo['job'],":province"=>$userInfo['province'],
-					":city"=>$userInfo['city'],":oneWord"=>$userInfo['oneWord']);
-				//传入的用户名和邮箱没有被占用时才能更新
-				if(!$this->isUsernameUsedByOthers($userInfo['username']) && !$this->isEmailUsedByOthers($userInfo['email'])){
-					$sql="update tb_user set username=:newUsername,email=:email,sex=:sex,job=:job,province=:province,city=:city,";
-					$sql.="oneWord=:oneWord where username=:username";
-					$result=$pdo->getUIDResult($sql,$paraArr);
-					if($result==1){
-						//如果进行了修改，就改变session中的username值，以便用户可以继续正常浏览网页
-						$_SESSION['username']=$userInfo['username'];
-					}
-					return $result;
+			global $pdo;
+			$username=$_SESSION['username'];
+			$newUsername=$userInfo['username'];
+			$email=$userInfo['email'];
+			$sex=$userInfo['sex'];
+			$job=$userInfo['job'];
+			$province=$userInfo['province'];
+			$city=$userInfo['city'];
+			$oneWord=$userInfo['oneWord'];
+			$paraArr=array(":username"=>$username,":newUsername"=>$newUsername,":email"=>$email,
+				":sex"=>$sex,":job"=>$job,":province"=>$province,
+				":city"=>$city,":oneWord"=>$oneWord);
+			//传入的用户名和邮箱没有被占用时才能更新
+			if(!$this->isUsernameUsedByOthers($userInfo['username']) && !$this->isEmailUsedByOthers($userInfo['email'])){
+				$sql="update tb_user set username=:newUsername,email=:email,sex=:sex,job=:job,province=:province,city=:city,";
+				$sql.="oneWord=:oneWord where username=:username";
+				$result=$pdo->getUIDResult($sql,$paraArr);
+				if($result==1){
+					//如果进行了修改，就改变session中的username值，以便用户可以继续正常浏览网页
+					$_SESSION['username']=$userInfo['username'];
 				}
-				else{
-					return "用户名或者邮箱重复重复，无法更新";
-				}				
+				return $result;
 			}
 			else{
-				return "用户未登录，不能修改个人信息";
+				return "用户名或者邮箱重复重复，无法更新";
 			}
 		}
 		
@@ -676,55 +671,44 @@
 		 * 存在新旧用户名相同的情况，无论是否发生更改，都会在执行sql语句时修改。邮箱的情况也一样
 		 */
 		function isUsernameUsedByOthers($newUsername){
-			if($this->isUserLogon()){
-				$oldUsername=$_SESSION['username'];
-				global $pdo;
-				//直接检测和现在用户名不同，且和新用户名相同的记录数
-				$paraArr=array(":oldUsername"=>$oldUsername,":newUsername"=>$newUsername);
-				$sql="select count(username) as userCount from tb_user where username=:newUsername and username!=:oldUsername";
-				$result=$pdo->getOneFiled($sql, "userCount",$paraArr);
-				if($result==0){
-					return false;
-				}
-				else{
-					return true;
-				}		
+			$oldUsername=$_SESSION['username'];
+			global $pdo;
+			//直接检测和现在用户名不同，且和新用户名相同的记录数
+			$paraArr=array(":oldUsername"=>$oldUsername,":newUsername"=>$newUsername);
+			$sql="select count(username) as userCount from tb_user where username=:newUsername and username!=:oldUsername";
+			$result=$pdo->getOneFiled($sql, "userCount",$paraArr);
+			if($result==0){
+				return false;
 			}
 			else{
-				return null;
-			}			
+				return true;
+			}		
 		}
 		
 		/**
 		 * 下面检测邮箱是否被占用
 		 */
 		function isEmailUsedByOthers($newEmail){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				//直接检测和现在用户名不同，且和新邮箱相同的记录数
-				$paraArr=array("username"=>$username,":newEmail"=>$newEmail);
-				$sql="select count(email) emailCount from tb_user where email=:newEmail and username!=:username";
-				$emailCount=$pdo->getOneFiled($sql, "emailCount",$paraArr);
-				
-				if($emailCount==0){
-					return false;
-				}
-				else{
-					return true;
-				}
-						
+			global $pdo;
+			$username=$_SESSION['username'];
+			//直接检测和现在用户名不同，且和新邮箱相同的记录数
+			$paraArr=array("username"=>$username,":newEmail"=>$newEmail);
+			$sql="select count(email) emailCount from tb_user where email=:newEmail and username!=:username";
+			$emailCount=$pdo->getOneFiled($sql, "emailCount",$paraArr);
+			
+			if($emailCount==0){
+				return false;
 			}
 			else{
-				return null;
-			}			
+				return true;
+			}
 		}
 		
 		/**
 		 * 下面的函数修改用户自己的密码
 		 */
 		function changeSelfPassword($oldPassword,$newPassword){
-			if($this->isUserLogon()){
+			if(strlen($oldPassword)<18 && strlen($newPassword)<18){
 				global $pdo;
 				$oldPassword=md5($oldPassword);
 				$newPassword=md5($newPassword);
@@ -735,7 +719,7 @@
 				return $affectRow;
 			}
 			else{
-				return "用户未登录，不能修改密码";
+				return "密码长度不符合要求";
 			}
 		}
 		
@@ -744,8 +728,8 @@
 		 * 理论上应该在插入之前判断用户是否已经关注了，但是这样会引起对数据库进行两次查询
 		 * 降低网站整体性能。我将在sql语句中进行判断，让一次查询一次插入变成仅有一次插入
 		 */
-		function addFollow($starId,$followType){			
-			if($this->isUserLogon() && !$this->isFollowExist($starId)){			
+		function addFollow($starId,$followType){
+			if(!$this->isFollowExist($starId)){
 				global $pdo;
 				$logonUser=$_SESSION['username'];
 				$followId=uniqid("",true);
@@ -757,9 +741,8 @@
 				
 				$affectRow=$pdo->getUIDResult($sql,$paraArr);
 				return $affectRow;
-			}
-			else{
-				return "没有登录系统，无法进行关注";
+			}else{
+				return "关注已经存在";
 			}
 		}
 		
@@ -767,58 +750,46 @@
 		 * 判断关注是否已经存在
 		 */
 		function isFollowExist($starId){
-			if($this->isUserLogon()){			
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array(":fansName"=>$logonUser,":starId"=>$starId);
-				//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
-				$sql="select count(*) as followCount from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:fansName)";
-				
-				$count=$pdo->getOneFiled($sql, "followCount",$paraArr);
-				return $count>0?true:false;
-			}
-			else{
-				return "没有登录系统，无法进行关注";
-			}			
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array(":fansName"=>$logonUser,":starId"=>$starId);
+			//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
+			$sql="select count(*) as followCount from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:fansName)";
+			
+			$count=$pdo->getOneFiled($sql, "followCount",$paraArr);
+			return $count>0?true:false;	
 		}
 		
 		/**
 		 * 下面的函数让用户对一个问题/话题/人取消关注
 		 */
 		function deleteFollow($starId){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				//理论上传入followId，对相应的follow记录进行删除也是可以的，但是这里传入userId和questionId感觉更符合语境
-				$paraArr=array(":logonUser"=>$logonUser,":starId"=>$starId);
-				//取消关注就简单了，不管用判断用户是否关注过
-				$sql="delete from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser)";
-				$affectRow=$pdo->getUIDResult($sql,$paraArr);
-				return $affectRow;
-			}
-			else{
-				return "没有登录系统，无法取消关注";
-			}
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			//理论上传入followId，对相应的follow记录进行删除也是可以的，但是这里传入userId和questionId感觉更符合语境
+			$paraArr=array(":logonUser"=>$logonUser,":starId"=>$starId);
+			//取消关注就简单了，不管用判断用户是否关注过
+			$sql="delete from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser)";
+			$affectRow=$pdo->getUIDResult($sql,$paraArr);
+			return $affectRow;
 		}
 		
 		/**
 		 * 下面的函数检测用户是否关注了问题/话题/人
 		 */
 		function hasUserFollowed($starId){
-			if($this->isUserLogon()){				
-				global $pdo;
+			global $pdo;
+			$logonUser="";
+			if($this->isUserLogon()){
 				$logonUser=$_SESSION['username'];
-				//理论上传入followId，对相应的follow记录进行删除也是可以的，但是这里传入userId和questionId感觉更符合语境
-				$paraArr=array(":logonUser"=>$logonUser,":starId"=>$starId);
-				//取消关注就简单了，不管用判断用户是否关注过
-				$sql="select count(*) as followCount from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser)";
-				$followCount=$pdo->getOneFiled($sql,"followCount",$paraArr);
-				//能查询到关注信息，说明用户关注了问题，结果是1或者0，可以代表true或者false
-				return $followCount;
-			}
-			else{
-				return "没有登录系统，无法得知用户是否进行了关注";
-			}
+			}			
+			//理论上传入followId，对相应的follow记录进行删除也是可以的，但是这里传入userId和questionId感觉更符合语境
+			$paraArr=array(":logonUser"=>$logonUser,":starId"=>$starId);
+			//取消关注就简单了，不管用判断用户是否关注过
+			$sql="select count(*) as followCount from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser)";
+			$followCount=$pdo->getOneFiled($sql,"followCount",$paraArr);
+			//能查询到关注信息，说明用户关注了问题，结果是1或者0，可以代表true或者false
+			return $followCount;
 		}
 		
 		/**
@@ -826,88 +797,106 @@
 		 * 前面的函数不涉及到问题/话题表，所以可以通用，下面的函数加载问题/话题/人信息，就需要单独写
 		 */
 		function loadUserFollowedQuestions(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				$paraArr=array(":logonUser"=>$username);
-				$sql="select (select username from tb_user where userId=tq.askerId) as asker,tq.* from tb_question tq where questionId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
-				$followedQuestions=$pdo->getQueryResult($sql,$paraArr);
-				return $followedQuestions;
-			}
-			else{
-				return "用户未登录系统，无法获取相关信息";
-			}
+			global $pdo;
+			$username=$_SESSION['username'];
+			$paraArr=array(":logonUser"=>$username);
+			$sql="select (select username from tb_user where userId=tq.askerId) as asker,tq.* from tb_question tq where questionId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
+			$followedQuestions=$pdo->getQueryResult($sql,$paraArr);
+			return $followedQuestions;
 		}
 		
 		/**
 		 * 下面的函数加载用户关注的人
 		 */
 		function loadUserFollowedUsers(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				$paraArr=array(":logonUser"=>$username);
-				$sql="select userId,username,sex,email,oneWord from tb_user where userId in (select starId from tb_follow where fansId in(select userId from tb_user where username=:logonUser))";
-				$followedUsers=$pdo->getQueryResult($sql,$paraArr);
-				return $followedUsers;
-			}
-			else{
-				return "用户未登录系统，无法获取相关信息";
-			}
+			global $pdo;
+			$username=$_SESSION['username'];
+			$paraArr=array(":logonUser"=>$username);
+			$sql="select userId,username,sex,email,oneWord from tb_user where userId in (select starId from tb_follow where fansId in(select userId from tb_user where username=:logonUser))";
+			$followedUsers=$pdo->getQueryResult($sql,$paraArr);
+			return $followedUsers;
 		}
 		
 		/**
 		 * 下面的函数用来上传用户头像
 		 */
 		function uploadSelfHeading($fileName,$realName,$isUnitTest=false){
-			if($this->isUserLogon()){
-				global $pdo;
-				//通过登录用户名获取到相应的userId
-				$username=$_SESSION['username'];
-				$paraArr=array(":username"=>$username);
-				$sql="select userId from tb_user where username=:username";
-				$userId=$pdo->getOneFiled($sql,"userId",$paraArr);
-				
-				// $fileName=$_FILES['file']['tmp_name']??"";
-				// $realName=$_FILES['file']['name']??"";
-				//根据用户Id创建相应的文件夹保存用户的头像
-				$directory="../UploadImages/heading/$userId";
-				if(file_exists($directory)){
-					//如果文件夹存在，就先删除文件夹（里面有原来的图片）
-					$this->deleteDirectory($directory);
-				}
-				if(!file_exists($directory)){
-					//如果文件夹不存在，就创建文件夹，避免报错
-					mkdir("$directory", 0777, true );
-				}
-				$newPath="$directory/$realName";			
-				if(is_uploaded_file($fileName)){							
-					move_uploaded_file($fileName, $newPath);				
-				}
-				
-				//函数is_uploaded_file会检测文件是不是通过http上传的，
-				//如果不是结果为false，这不方便进行单元测试，所以加了下面的代码
-				if($isUnitTest==true){
-					copy($fileName, $newPath);
-				}
-				
-				$fileUploadOk=file_exists($newPath)?1:0;
-				//将用户上传的图片地址更新到tb_user表的heading字段中
-				$paraArr=array(":heading"=>$newPath,":userId"=>$userId);
-				$sql="update tb_user set heading=:heading where userId=:userId";	
-				$affectRow=$pdo->getUIDResult($sql,$paraArr);		
-				
-				//记录文件上传结果（是否存到了对应文件夹），记录数据库更新结果
-				$resultArr=array("fileUploadOk"=>$fileUploadOk,"newPath"=>$newPath,"affectRow"=>$affectRow);
-				//返回的地址是html页面对应要显示图片的地址
-				return $resultArr;
+			global $pdo;
+			//通过登录用户名获取到相应的userId
+			$username=$_SESSION['username'];
+			$paraArr=array(":username"=>$username);
+			$sql="select userId from tb_user where username=:username";
+			$userId=$pdo->getOneFiled($sql,"userId",$paraArr);
+			
+			//根据用户Id创建相应的文件夹保存用户的头像
+			$directory="../UploadImages/heading/$userId";
+			if(file_exists($directory)){
+				//如果文件夹存在，就先删除文件夹（里面有原来的图片）
+				$this->deleteDirectory($directory);
 			}
-			else{
-				$resultArr=array("affectRow"=>"用户没有登录系统，不得上传图片");
-				return $resultArr;
-			}			
+			if(!file_exists($directory)){
+				//如果文件夹不存在，就创建文件夹，避免报错
+				mkdir("$directory", 0777, true );
+			}
+			$newPath="$directory/$realName";	
+			//取出没有后缀的文件名，并由此得出新的mini文件名
+			$suffix = substr(strrchr($realName, '.'), 1);
+			$realNameNoSuffix = basename($realName,".".$suffix);
+			$realMiniName=$realNameNoSuffix."_mini.".$suffix;
+			$newMiniPath="$directory/$realMiniName";
+			
+			$newPath=iconv('utf-8','gbk',$newPath);//保存文件前转化编码
+			$newMiniPath=iconv('utf-8','gbk',$newMiniPath);//保存文件前转化编码
+			if(is_uploaded_file($fileName)){							
+				move_uploaded_file($fileName, $newPath);	
+				//保存图片的压缩版
+				$this->compressHeadingImg($newPath,$newMiniPath);			
+			}
+			
+			//函数is_uploaded_file会检测文件是不是通过http上传的，
+			//如果不是结果为false，这不方便进行单元测试，所以加了下面的代码
+			if($isUnitTest==true){
+				copy($fileName, $newPath);
+				//保存图片的压缩版
+				$this->compressHeadingImg($newPath,$newMiniPath);	
+			}				
+			
+			$newPath=iconv('gbk','utf-8',$newPath);//将数据传回前端前再次把编码转化回来
+			$fileUploadOk=file_exists($newPath)?1:0;
+			//将用户上传的图片地址更新到tb_user表的heading字段中				
+			$paraArr=array(":heading"=>$newPath,":userId"=>$userId);
+			$sql="update tb_user set heading=:heading where userId=:userId";	
+			$affectRow=$pdo->getUIDResult($sql,$paraArr);		
+			
+			//记录文件上传结果（是否存到了对应文件夹），记录数据库更新结果				
+			$resultArr=array("fileUploadOk"=>$fileUploadOk,"newPath"=>$newPath,"affectRow"=>$affectRow);
+			//返回的地址是html页面对应要显示图片的地址
+			return $resultArr;
 		}
 
+		/**
+		 * 下面的函数用来压缩保存图片，压缩的图片用来在论坛中显示头像
+		 */
+		private function compressHeadingImg($source,$dst_img){
+			if(file_exists($source)){
+				$percent=1;
+				$sourceSize=filesize($source);
+				if($sourceSize>=20000){
+					$percent=0.1;//大于20KB的图压缩到10%					
+				}
+				else if($sourceSize>10000 && $sourceSize<20000){
+					$percent=0.2;//10KB到20KB之间的图压缩到20%
+				}
+				else if($sourceSize>5000 && $sourceSize<=10000){
+					$percent=0.3;//5KB到10KB之间的图压缩到30%
+				}
+				else if($sourceSize>3000 && $sourceSize<=5000){
+					$percent=0.5;//3KB到5KB之间的图压缩到50%
+				}
+				$image = (new ImgCompress($source,$percent))->compressImg($dst_img);				
+			}
+		}
+		 
 		/**
 		 * 下面的函数通过递归的方式删除文件夹下的文件，最后删除文件夹
 		 */
@@ -954,39 +943,29 @@
 		 * 下面的函数用来让一个用户关注另外一个用户
 		 */
 		function addUserFollow($starId){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$followId=uniqid("",true);
-				$paraArr=array(":logonUser"=>$logonUser,":followId"=>$followId,":starId"=>$starId);
-				//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
-				$sql="insert into tb_follow (followId,starId,fansId,type) select :followId,:starId,(select userId from tb_user where username=:logonUser),'1' ";
-				$sql.="from dual where not exists (select * from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser))";
-				
-				$affectRow=$pdo->getUIDResult($sql,$paraArr);
-				return $affectRow;
-			}
-			else{
-				return "没有登录系统，无法关注别人";
-			}
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$followId=uniqid("",true);
+			$paraArr=array(":logonUser"=>$logonUser,":followId"=>$followId,":starId"=>$starId);
+			//下面的语句会判断该关注是否已经存在，如果存在了，就不会插入数据了
+			$sql="insert into tb_follow (followId,starId,fansId,type) select :followId,:starId,(select userId from tb_user where username=:logonUser),'1' ";
+			$sql.="from dual where not exists (select * from tb_follow where starId=:starId and fansId=(select userId from tb_user where username=:logonUser))";
+			
+			$affectRow=$pdo->getUIDResult($sql,$paraArr);
+			return $affectRow;
 		}
 		
 		/**
 		 * 加载用户的粉丝
 		 */
 		function loadUserFans(){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array(":logonUser"=>$logonUser);
-				$sql="select * from tb_user where userId in(select fansId from tb_follow where starId=(select userId from tb_user where username=:logonUser))";
-				
-				$fans=$pdo->getQueryResult($sql,$paraArr);
-				return $fans;
-			}
-			else{
-				return "没有登录系统，无法获取相关信息";
-			}
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array(":logonUser"=>$logonUser);
+			$sql="select * from tb_user where userId in(select fansId from tb_follow where starId=(select userId from tb_user where username=:logonUser))";
+			
+			$fans=$pdo->getQueryResult($sql,$paraArr);
+			return $fans;
 		}
 		
 		/**
@@ -994,25 +973,20 @@
 		 * hasAuthority这个参数是给管理员用的，如果判断出用户非问题创建者，但是有问题管理权限，也可以管理问题
 		 */
 		function deleteSelfQuestion($questionId,$hasAuthority=false){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array();
-				if($hasAuthority){
-					$paraArr=array(":questionId"=>$questionId);
-					$sql="delete from tb_question where questionId=:questionId";
-				}
-				else{
-					$paraArr=array(":logonUser"=>$logonUser,":questionId"=>$questionId);
-					$sql="delete from tb_question where questionId=:questionId and askerId =(select userId from tb_user where  username=:logonUser)";
-				}
-				
-				$deleteQuestionCount=$pdo->getUIDResult($sql,$paraArr);
-				return $deleteQuestionCount;
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array();
+			if($hasAuthority){
+				$paraArr=array(":questionId"=>$questionId);
+				$sql="delete from tb_question where questionId=:questionId";
 			}
 			else{
-				return "没有登录系统，无法进行该操作";
+				$paraArr=array(":logonUser"=>$logonUser,":questionId"=>$questionId);
+				$sql="delete from tb_question where questionId=:questionId and askerId =(select userId from tb_user where  username=:logonUser)";
 			}
+			
+			$deleteQuestionCount=$pdo->getUIDResult($sql,$paraArr);
+			return $deleteQuestionCount;
 		}
 		
 		/**
@@ -1031,75 +1005,78 @@
 		 * 加载问题类型
 		 */
 		function loadQuestionTypes(){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$sql="select name from tb_types where belongTo='question'";
-				
-				$types=$pdo->getQueryResult($sql);
-				return $types;
-			}
-			else{
-				return "没有登录系统，无法获取相关信息";
-			}
+			global $pdo;
+			$sql="select name from tb_types where belongTo='question'";
+			
+			$types=$pdo->getQueryResult($sql);
+			return $types;
 		}
 		
 		/**
 		 * 加载作文类型
 		 */
 		function loadArticleTypes(){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$sql="select name from tb_types where belongTo='article'";
-				
-				$types=$pdo->getQueryResult($sql);
-				return $types;
-			}
-			else{
-				return "没有登录系统，无法获取相关信息";
-			}
+			global $pdo;
+			$sql="select name from tb_types where belongTo='article'";
+			
+			$types=$pdo->getQueryResult($sql);
+			return $types;
 		}
 		
 		/**
 		 * 加载话题类型
 		 */
 		function loadTopicTypes(){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$sql="select name from tb_types where belongTo='topic'";
-				
-				$types=$pdo->getQueryResult($sql);
-				return $types;
-			}
-			else{
-				return "没有登录系统，无法获取相关信息";
-			}
+			global $pdo;
+			$sql="select name from tb_types where belongTo='topic'";
+			
+			$types=$pdo->getQueryResult($sql);
+			return $types;
 		}
 		
 		/*************************下面是针对话题设计的函数，基本上和问题差不多********************/
 		/**
 		 * 下面定义一个函数用来让用户创建一个新的话题
 		 */
-		function createNewTopic($topicType,$topicContent,$topicDescription){			
-			if($this->isUserLogon() && !$this->isTopicRepeat($topicContent)){
-				global $pdo;
-				$topicId=uniqid("",true);
-				$asker=$_SESSION['username'];
-				//需要先获取到登录用户的用户ID，tb_topic的数据库中需要保存用户Id而不是用户名，因为用户名虽然唯一但可变
-				//但是这样需要进行两次sql查询，影响性能，我试试将两条sql语句合并成一条				
-				// $paraArr=array(":username"=>$asker);
-				// $sql="select userId from tb_user where username=:username";
-				// $askerId=$pdo->getOneFiled($sql, "userId",$paraArr);
-				
-				$askerDate=date("Y-m-d H:i:s");
-				$paraArr=array(":topicId"=>$topicId,":asker"=>$asker,":askDate"=>$askerDate,":topicType"=>$topicType,
-					":topicContent"=>$topicContent,":topicDescription"=>$topicDescription,":enable"=>"1");
-				$sql="insert into tb_topic values(:topicId,(select userId from tb_user where username=:asker),:askDate,:topicType,:topicContent,:topicDescription,:enable)";
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
-			}
-			else{
-				return null;
-			}
+		function createNewTopic($topicType,$topicContent,$topicDescription){
+			if(!$this->isCreateTopicOverCount()){
+				if(!$this->isTopicRepeat($topicContent)){
+					global $pdo;
+					$topicId=uniqid("",true);
+					$asker=$_SESSION['username'];
+					//需要先获取到登录用户的用户ID，tb_topic的数据库中需要保存用户Id而不是用户名，因为用户名虽然唯一但可变
+					//但是这样需要进行两次sql查询，影响性能，我试试将两条sql语句合并成一条				
+					// $paraArr=array(":username"=>$asker);
+					// $sql="select userId from tb_user where username=:username";
+					// $askerId=$pdo->getOneFiled($sql, "userId",$paraArr);
+					
+					$askerDate=date("Y-m-d H:i:s");
+					$paraArr=array(":topicId"=>$topicId,":asker"=>$asker,":askDate"=>$askerDate,":topicType"=>$topicType,
+						":topicContent"=>$topicContent,":topicDescription"=>$topicDescription,":enable"=>"1");
+					$sql="insert into tb_topic values(:topicId,(select userId from tb_user where username=:asker),:askDate,:topicType,:topicContent,:topicDescription,:enable)";
+					$result=$pdo->getUIDResult($sql,$paraArr);
+					//删除用户多余的图片（文章，话题或者问题中的）
+					$this->deleteUserSpareImages();
+					return $result;
+				}
+				else{
+					return "话题重复了";
+				}
+			}else{
+				return urlencode("今日创建话题数量已经达到上限");
+			}					
+		}
+		
+		/**
+		 * 判断用户今天写的话题是否超过了限制
+		 */
+		function isCreateTopicOverCount(){
+			global $pdo;
+			$username=$_SESSION['username'];
+			$paraArr=array(":username"=>$username);
+			$sql="call pro_isCreateTopicOverTimes(:username)";
+			$result=$pdo->getOneFiled($sql, "isOverTimes",$paraArr);
+			return $result=="yes"?true:false;
 		}
 		
 		/**
@@ -1118,56 +1095,41 @@
 		 * 获取用户提出的话题的话题列表
 		 */
 		function getSelfTopicList($page=1){
-			if($this->isUserLogon()){
-				global $pdo;
-				//获取分页数据
-				$topicsCount=$this->getSelfTopicCount();
-				$pageTotal=ceil($topicsCount/5);//获取总页数
-				//规范化页数，并返回起始页
-				$startRow=$this->getStartPage($page,$pageTotal);
-				
-				//分页时要用到limit，由于对limit后面的参数（不能用数组参数传值）
-				//在上面进行了限制，可以防止sql注入，所以对于该参数使用字符串拼接
-				$paraArr=array(":asker"=>$_SESSION['username']);
-				$sql="select topicId,:asker as asker,askDate,topicType,content,enable from tb_topic where askerId=(select userId from tb_user where username=:asker) limit $startRow,5";
-				$topicList=$pdo->getQueryResult($sql,$paraArr);
-				return $topicList;
-			}
-			else{
-				return "未登录系统，无法进行操作";
-			}
+			global $pdo;
+			//获取分页数据
+			$topicsCount=$this->getSelfTopicCount();
+			$pageTotal=ceil($topicsCount/5);//获取总页数
+			//规范化页数，并返回起始页
+			$startRow=$this->getStartPage($page,$pageTotal);
+			
+			//分页时要用到limit，由于对limit后面的参数（不能用数组参数传值）
+			//在上面进行了限制，可以防止sql注入，所以对于该参数使用字符串拼接
+			$paraArr=array(":asker"=>$_SESSION['username']);
+			$sql="select topicId,:asker as asker,askDate,topicType,content,enable from tb_topic where askerId=(select userId from tb_user where username=:asker) limit $startRow,5";
+			$topicList=$pdo->getQueryResult($sql,$paraArr);
+			return $topicList;
 		}
 		
 		/**
 		 * 获取个人话题的总数
 		 */
 		function getSelfTopicCount(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$paraArr=array(":logonUser"=>$_SESSION['username']);
-				$sql="select count(*) as topicsCount from tb_topic where askerId=(select userId from tb_user where username=:logonUser)";
-				$topicsCount=$pdo->getOneFiled($sql, "topicsCount",$paraArr);
-				return $topicsCount;
-			}
-			else{
-				return "未登录系统，无法进行操作";
-			}
+			global $pdo;
+			$paraArr=array(":logonUser"=>$_SESSION['username']);
+			$sql="select count(*) as topicsCount from tb_topic where askerId=(select userId from tb_user where username=:logonUser)";
+			$topicsCount=$pdo->getOneFiled($sql, "topicsCount",$paraArr);
+			return $topicsCount;
 		}
 		
 		/**
 		 * 下面通过话题的Id获取到话题的详情
 		 */
 		function getTopicDetailsByTopicId($topicId){
-			if($this->isUserLogon()){
-				global $pdo;
-				$paraArr=array(":topicId"=>$topicId);
-				$sql="select * from tb_topic where topicId=:topicId";
-				$topicDetails=$pdo->getQueryResult($sql,$paraArr);
-				return $topicDetails;
-			}
-			else{
-				return null;
-			}
+			global $pdo;
+			$paraArr=array(":topicId"=>$topicId);
+			$sql="select * from tb_topic where topicId=:topicId";
+			$topicDetails=$pdo->getQueryResult($sql,$paraArr);
+			return $topicDetails;
 		}
 		
 		/**
@@ -1175,43 +1137,33 @@
 		 * 单个用户搜索话题的时候，无论话题是否被禁用，都要能搜索出来进行管理
 		 */
 		function getTopicListByContentOrDescription($keyword,$page=1){
-			if($this->isUserLogon()){
-				global $pdo;
-				//获取分页数据
-				$count=$this->getTopicListByContentOrDescriptionCount($keyword);
-				$pageTotal=ceil($count/5);//获取总页数
-				//规范化页数，并返回起始页
-				$startRow=$this->getStartPage($page,$pageTotal);
-				
-				$username=$_SESSION['username'];
-				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
-				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select :asker as asker,tt.* from tb_topic tt where askerId=(select userId from tb_user where username=:asker) ";
-				$sql.="and (content like :keyword or topicDescription like :keyword) limit $startRow,5";
-				$topicList=$pdo->getQueryResult($sql,$paraArr);
-				return $topicList;
-			}
-			else{
-				return "未登录无法进行操作";
-			}
+			global $pdo;
+			//获取分页数据
+			$count=$this->getTopicListByContentOrDescriptionCount($keyword);
+			$pageTotal=ceil($count/5);//获取总页数
+			//规范化页数，并返回起始页
+			$startRow=$this->getStartPage($page,$pageTotal);
+			
+			$username=$_SESSION['username'];
+			$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+			$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+			$sql="select :asker as asker,tt.* from tb_topic tt where askerId=(select userId from tb_user where username=:asker) ";
+			$sql.="and (content like :keyword or topicDescription like :keyword) limit $startRow,5";
+			$topicList=$pdo->getQueryResult($sql,$paraArr);
+			return $topicList;
 		}
 		
 		/**
 		 * 获取关键字搜索出的话题条数
 		 */
 		function getTopicListByContentOrDescriptionCount($keyword){
-			if($this->isUserLogon()){
-				global $pdo;
-				$username=$_SESSION['username'];
-				$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
-				$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
-				$sql="select count(*) as topicCount from tb_topic tt where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or topicDescription like :keyword)";
-				$count=$pdo->getOneFiled($sql,"topicCount",$paraArr);
-				return $count;
-			}
-			else{
-				return "未登录无法进行操作";
-			}
+			global $pdo;
+			$username=$_SESSION['username'];
+			$keyword="%".$keyword."%";//使用模糊查询，前后要加百分号
+			$paraArr=array(":keyword"=>$keyword,":asker"=>$username);
+			$sql="select count(*) as topicCount from tb_topic tt where askerId=(select userId from tb_user where username=:asker) and (content like :keyword or topicDescription like :keyword)";
+			$count=$pdo->getOneFiled($sql,"topicCount",$paraArr);
+			return $count;
 		}
 		
 		/**
@@ -1220,25 +1172,20 @@
 		 * hasAuthority这个参数是给管理员用的，如果判断出用户非话题创建者，但是有话题管理权限，也可以管理话题
 		 */
 		function disableSelfTopic($topicId,$hasAuthority=false){
-			if($this->isUserLogon()){
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array();
-				if($hasAuthority){
-					$paraArr=array(":topicId"=>$topicId);
-					$sql="update tb_topic set enable=0 where topicId=:topicId ";
-				}
-				else{
-					$paraArr=array(":topicId"=>$topicId,":logonUser"=>$logonUser);
-					$sql="update tb_topic set enable=0 where topicId=:topicId ";
-					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
-				}				
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array();
+			if($hasAuthority){
+				$paraArr=array(":topicId"=>$topicId);
+				$sql="update tb_topic set enable=0 where topicId=:topicId ";
 			}
 			else{
-				return "禁用话题失败，你没有登录系统";
-			}
+				$paraArr=array(":topicId"=>$topicId,":logonUser"=>$logonUser);
+				$sql="update tb_topic set enable=0 where topicId=:topicId ";
+				$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
+			}				
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
 		}
 		
 		/**
@@ -1247,51 +1194,42 @@
 		 * hasAuthority这个参数是给管理员用的，如果判断出用户非话题创建者，但是有话题管理权限，也可以管理话题
 		 */
 		function enableSelfTopic($topicId,$hasAuthority=false){
-			if($this->isUserLogon()){
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array();
-				if($hasAuthority){
-					$paraArr=array(":topicId"=>$topicId);
-					$sql="update tb_topic set enable=1 where topicId=:topicId ";
-				}
-				else{
-					$paraArr=array(":topicId"=>$topicId,":logonUser"=>$logonUser);
-					$sql="update tb_topic set enable=1 where topicId=:topicId ";
-					$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
-				}
-				$result=$pdo->getUIDResult($sql,$paraArr);
-				return $result;
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array();
+			if($hasAuthority){
+				$paraArr=array(":topicId"=>$topicId);
+				$sql="update tb_topic set enable=1 where topicId=:topicId ";
 			}
 			else{
-				return "启用话题失败，你没有登录系统";
+				$paraArr=array(":topicId"=>$topicId,":logonUser"=>$logonUser);
+				$sql="update tb_topic set enable=1 where topicId=:topicId ";
+				$sql.="and askerId=(select userId from tb_user where username=:logonUser)";
 			}
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
 		}
 		
 		/**
 		 * 下面的函数用来让用户评论一个话题
 		 */
 		function commentTopic($topicId,$content){
-			if($this->isUserLogon()){
-				global $pdo;
-				//向数据库中增加评论信息
-				$commenter=$_SESSION['username'];
-				$commentId=uniqid("",true);
-				$commentDate=date("Y-m-d H:i:s");
-				$paraArr=array(":commentId"=>$commentId,":topicId"=>$topicId,
-					":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content,":enable"=>"1");
-				$sql="insert into tb_comment values(:commentId,:topicId,(select userId from tb_user where username=:commenter),:commentDate,:content,:enable)";
-				$affectRow=$pdo->getUIDResult($sql,$paraArr);
-				
-				$comment=$this->getCommentByCommentId($commentId);
-				
-				$resultArr=array("affectRow"=>$affectRow,"createdComment"=>$comment);				
-				
-				return $resultArr;
-			}
-			else{
-				return null;
-			}
+			global $pdo;
+			//向数据库中增加评论信息
+			$commenter=$_SESSION['username'];
+			$commentId=uniqid("",true);
+			
+			$commentDate=date("Y-m-d H:i:s");
+			$paraArr=array(":commentId"=>$commentId,":topicId"=>$topicId,
+				":commenter"=>$commenter,":commentDate"=>$commentDate,":content"=>$content,":enable"=>"1");
+			$sql="insert into tb_comment values(:commentId,:topicId,(select userId from tb_user where username=:commenter),:commentDate,:content,:enable)";
+			$affectRow=$pdo->getUIDResult($sql,$paraArr);
+			
+			$comment=$this->getCommentByCommentId($commentId);
+			
+			$resultArr=array("affectRow"=>$affectRow,"createdComment"=>$comment);				
+			
+			return $resultArr;
 		}
 				
 		
@@ -1315,7 +1253,7 @@
 		 * 下面的函数根据评论号删除一个评论
 		 */
 		function disableCommentForTopic($commentId){
-			if($this->isUserLogon() && $this->isCommentEnable($commentId)){
+			if($this->isCommentEnable($commentId)){
 				global $pdo;
 				$commenter=$_SESSION['username'];
 				$paraArr=array(":commentId"=>$commentId,":commenter"=>$commenter);
@@ -1325,7 +1263,7 @@
 				return $result;
 			}
 			else{
-				return 0;
+				return "评论已经被删除";
 			}
 		}
 		
@@ -1345,25 +1283,21 @@
 		 * hasAuthority这个参数是给管理员用的，如果判断出用户非话题创建者，但是有话题管理权限，也可以管理话题
 		 */
 		function deleteSelfTopic($topicId,$hasAuthority=false){
-			if($this->isUserLogon()){				
-				global $pdo;
-				$logonUser=$_SESSION['username'];
-				$paraArr=array();
-				if($hasAuthority){
-					$paraArr=array(":topicId"=>$topicId);
-					$sql="delete from tb_topic where topicId=:topicId";
-				}
-				else{
-					$paraArr=array(":logonUser"=>$logonUser,":topicId"=>$topicId);
-					$sql="delete from tb_topic where topicId=:topicId and askerId =(select userId from tb_user where  username=:logonUser)";
-				}
-				
-				$deleteTopicCount=$pdo->getUIDResult($sql,$paraArr);
-				return $deleteTopicCount;
+			global $pdo;
+			$logonUser=$_SESSION['username'];
+			$paraArr=array();
+			$sql="";
+			if($hasAuthority){
+				$paraArr=array(":topicId"=>$topicId);
+				$sql="delete from tb_topic where topicId=:topicId";
 			}
 			else{
-				return "没有登录系统，无法进行该操作";
+				$paraArr=array(":logonUser"=>$logonUser,":topicId"=>$topicId);
+				$sql="delete from tb_topic where topicId=:topicId and askerId =(select userId from tb_user where  username=:logonUser)";
 			}
+			
+			$deleteTopicCount=$pdo->getUIDResult($sql,$paraArr);
+			return $deleteTopicCount;
 		}
 		
 		/**
@@ -1371,18 +1305,253 @@
 		 * 前面的函数不涉及到问题/话题表，所以可以通用，下面的函数加载问题/话题/人信息，就需要单独写
 		 */
 		function loadUserFollowedTopics(){
+			global $pdo;
+			$username=$_SESSION['username'];
+			$paraArr=array(":logonUser"=>$username);
+			$sql="select (select username from tb_user where userId=tt.askerId) as asker,tt.* from tb_topic tt where topicId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
+			$followedTopics=$pdo->getQueryResult($sql,$paraArr);
+			return $followedTopics;
+		}
+		
+		/**
+		 * 用户搜索问题、话题或人,最多显示30条结果
+		 */
+		function queryUserOrQuestionOrTopic($keyword){
+			global $pdo;
+			$keyword="%".$keyword."%";
+			$paraArr=array(":keyword"=>$keyword);
+			$sql="select 'user' as type,userId as id,username as content from tb_user where username like :keyword ";
+			$sql.="union select 'question' as type,questionId as id,content from tb_question where content like :keyword ";
+			$sql.="union select 'topic' as type,topicId as id,content from tb_topic where content like :keyword limit 20";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			return $result;
+		}
+		
+		/**
+		 * 获取热门问题，这里只获取排名（评论数）在前十位的问题
+		 */
+		function getTenHotQuestions(){
+			global $pdo;
+			$sql="select (select sex from tb_user where userId=askerId) as sex,(select username from tb_user where userId=askerId) as asker,(select heading from tb_user where userId=askerId) as heading,";
+			$sql.="vg.commentCount,tq.* from view_gettenhotquestionsid vg,tb_question tq where tq.questionId=vg.questionId";
+			$questions=$pdo->getQueryResult($sql);
+			return $questions;
+		}
+		
+		/**
+		 * 根据用户所在行业进行推荐
+		 */
+		function recommendQuestionsByJob(){
+			global $pdo;
+			$username="";
 			if($this->isUserLogon()){
-				global $pdo;
 				$username=$_SESSION['username'];
-				$paraArr=array(":logonUser"=>$username);
-				$sql="select (select username from tb_user where userId=tt.askerId) as asker,tt.* from tb_topic tt where topicId in(select starId from tb_follow where fansId=(select userId from tb_user where username=:logonUser))";
-				$followedTopics=$pdo->getQueryResult($sql,$paraArr);
-				return $followedTopics;
 			}
-			else{
-				return "用户未登录系统，无法获取相关信息";
+			$paraArr=array(":username"=>$username);
+			$sql="select (select sex from tb_user where userId=askerId) as sex,(select username from tb_user where userId=askerId) as asker,(select heading from tb_user where userId=askerId) as heading,";
+			$sql.="tq.* from tb_question tq where questionType=(select job from tb_user where username=:username) order by askDate desc limit 10";
+			$questions=$pdo->getQueryResult($sql,$paraArr);
+			return $questions;
+		}
+		
+		/**
+		 * 获取等待用户回复的问题（没有评论的问题），也只取十个问题
+		 */
+		function getWaitReplyQuestions(){
+			global $pdo;
+			$sql="select (select sex from tb_user where userId=askerId) as sex,(select username from tb_user where userId=askerId) as asker,(select heading from tb_user where userId=askerId) as heading,";
+			$sql.="tq.* from tb_question tq where tq.questionId not in(select distinct questionId from tb_comment) order by askDate asc limit 10";
+			$questions=$pdo->getQueryResult($sql);
+			return $questions;
+		}
+		
+		/**
+		 * 获取热门话题，这里只获取排名（评论数）在前十位的问题
+		 */
+		function getTenHotTopics(){
+			global $pdo;
+			$sql="select (select sex from tb_user where userId=askerId) as sex,(select username from tb_user where userId=askerId) as asker,(select heading from tb_user where userId=askerId) as heading,";
+			$sql.="vg.commentCount,tt.* from view_gettenhottopicsid vg,tb_topic tt where tt.topicId=vg.questionId";
+			$topics=$pdo->getQueryResult($sql);
+			return $topics;
+		}
+		
+		/**
+		 * 获取热门用户，这里只获取排名（提出的问题数和话题总数）在前十位的问题
+		 */
+		function getTenHotUsers(){
+			global $pdo;
+			$sql="select sum(totalCount) as total,askerId,asker from view_userquestiontopiccount ";
+			$sql.="group by askerId order by total desc limit 10;";
+			$users=$pdo->getQueryResult($sql);
+			return $users;
+		}
+		
+		/**
+		 * 获取今日话题，仅取十条
+		 */
+		function getTodayTopics(){
+			global $pdo;
+			
+			$todayStart= date('Y-m-d 00:00:00', time());    //今天开始时间
+			$todayEnd= date('Y-m-d 23:59:59', time());  //今天结束时间
+			$paraArr=array(":startTime"=>$todayStart,":endTime"=>$todayEnd);
+			$sql="select * from tb_topic where askDate between :startTime and :endTime order by askDate desc limit 10";
+			$topics=$pdo->getQueryResult($sql,$paraArr);
+			return $topics;
+		}
+		
+		/**
+		 * 通过用户Id获取用户名
+		 */
+		function getUserNameByUserId($userId){
+			global $pdo;
+			$paraArr=array(":userId"=>$userId);
+			$sql="select username from tb_user where userId=:userId";
+			$username=$pdo->getOneFiled($sql, "username",$paraArr);
+			return $username;
+		}
+		
+		/**
+		 * 获取最大提问数量
+		 */	
+		function getMaxQuestion(){
+			global $pdo;
+			$sql="select theValue from tb_systemsetting where theKey='每日最大提问数量'";
+			$maxQuestion=$pdo->getOneFiled($sql, "theValue");
+			return $maxQuestion;
+		}	
+		/**
+		 * 获取最大话题数量
+		 */	
+		function getMaxTopic(){
+			global $pdo;
+			$sql="select theValue from tb_systemsetting where theKey='每日最大创建话题数量'";
+			$maxTopic=$pdo->getOneFiled($sql, "theValue");
+			return $maxTopic;
+		}	
+		/**
+		 * 获取最大作文数量
+		 */	
+		function getMaxArticle(){
+			global $pdo;
+			$sql="select theValue from tb_systemsetting where theKey='每日最大写作数量'";
+			$maxArticle=$pdo->getOneFiled($sql, "theValue");
+			return $maxArticle;
+		}	
+		/**
+		 * 每日用户最大评论数量
+		 */	
+		function getMaxComment(){
+			global $pdo;
+			$sql="select theValue from tb_systemsetting where theKey='每日用户最大评论数量'";
+			$maxComment=$pdo->getOneFiled($sql, "theValue");
+			return $maxComment;
+		}	
+		/**
+		 * 每日用户找回密码数量
+		 */	
+		function getMaxFindPassword(){
+			global $pdo;
+			$sql="select theValue from tb_systemsetting where theKey='每日用户找回密码数量'";
+			$maxFindPassword=$pdo->getOneFiled($sql, "theValue");
+			return $maxFindPassword;
+		}	
+		/**
+		 * 用户最大访问次数/分钟
+		 */	
+		function getMaxVisitPerMinute(){
+			global $pdo;
+			$sql="select theValue from tb_systemsetting where theKey='用户最大访问次数/分钟'";
+			$maxVisitPerMinute=$pdo->getOneFiled($sql, "theValue");
+			return $maxVisitPerMinute;
+		}		
+		
+		/**
+		 * 获取用户权限信息
+		 * 用于判断用户是否有权限访问相应的功能
+		 */
+		function getUserAuthority(){
+			if($this->isUserLogon()){
+				$username=$_SESSION['username'];
+				global $pdo;
+				$paraArr=array(":username"=>$username);
+				$sql="call pro_getUserAuthority(:username)";
+				$authorities=$pdo->getQueryResult($sql,$paraArr);
+				return $authorities;
+			}else{
+				return array();	
 			}
 		}
-				
+		
+		/**
+		 * 判断用户是否有相应权限
+		 */		
+		public function hasAuthority($authorityName){
+			$authorityName=trim($authorityName);
+			$authorities=$this->getUserAuthority();
+			foreach($authorities as $authority){
+				foreach($authority as $key=>$value){
+					if(trim($value)==$authorityName){
+						return true;
+					}				
+				}
+			}
+			return false;
+		}
+		
+		/**
+		 * 产生一个随机的token，用于防止csrf攻击
+		 * 简单起见，使用php产生随机数
+		 */
+		function createToken(){
+			$token=uniqid("token",true);
+			return $token;
+		}
+		
+		/**
+		 * 判断图片是否已经保存在数据库中
+		 */
+		function isImageSavedInDB($imagePath){
+			global $pdo;
+			$username=$_SESSION['username']??"";
+			$paraArr=array(":username"=>$username,":imagePath"=>$imagePath);
+			$sql="call pro_isImageSavedInDB(:username,:imagePath)";
+			$isSaved=$pdo->getOneFiled($sql,"isImageSavedInDB",$paraArr);
+			return $isSaved=="yes"?true:false;
+		}
+		
+		/**
+		 * 删除一个人上传的多余的图片
+		 * 理论上在用户在编辑器中传入图片的时候，可以传入用户编辑器中图片路径的数组，并检查这个数组外
+		 * 的其他文件夹中的图片，用这个函数删除多余图片，这样比较严谨
+		 */
+		function deleteUserSpareImages(){
+			$username=$_SESSION['username']??"";
+			//要先转化编码才能找到
+			$username=iconv('utf-8','gbk',$username);	
+			$directory="../UploadImages/{$username}/";
+			//要判断用户文件夹是否存在
+			if(is_dir($directory)){
+				//打开该文件夹
+				if ($handle = opendir($directory)) {
+					//遍历所有文件名称
+				    while (false !== ($file = readdir($handle))) {
+				        if ($file != "." && $file != "..") {
+				        	//删除数据库中不存在的图片
+				            if(!$this->isImageSavedInDB($file)){
+				            	$file=$directory.$file;
+				            	unlink($file);
+				            }
+				        }
+				    }
+				    closedir($handle);
+					return true;
+				}
+			}else{
+				return "directory not exist";
+			}
+			
+		}
 	}
 ?>

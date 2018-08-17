@@ -28,7 +28,11 @@
 		}
 		
 		public function getAllTopic(){
-			$result=json_encode($this->topicManager->getAllTopicList());
+			$page=$_REQUEST['page']??1;
+			$count=$this->topicManager->getAllTopicCount();
+			$topics=$this->topicManager->getAllTopicList($page);
+			$resultArr=array("topics"=>$topics,"count"=>$count);
+			$result=json_encode($resultArr);
 			return $result;
 		}
 		/**
@@ -36,7 +40,7 @@
 		 * 但是调用的是TopicManager的方法而不是User的方法，不需要用户登录
 		 */
 		public function getTopicDetails(){
-			$topicId=$_REQUEST['topicId'];
+			$topicId=$_REQUEST['topicId']??"";
 			//需要获取话题详情，以及话题相关的评论
 			$topicDetails=$this->topicManager->getTopicDetails($topicId);
 			$topicComments=$this->user->getCommentsForTopic($topicId);
@@ -178,47 +182,65 @@
 		}		
 		
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){
-				return $this->userLogonInfo();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfTopicDetails"){
-				return $this->getSelfTopicDetails();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllTopic"){
-				return $this->getAllTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getTopicDetails"){
-				return $this->getTopicDetails();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="commentTopic"){
-				return $this->commentTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableCommentForTopic"){
-				return $this->disableCommentForTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getReplysForComment"){
-				return $this->getReplysForComment();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyComment"){
-				return $this->replyComment();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyReply"){
-				return $this->replyReply();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForComment"){
-				return $this->disableReplyForComment();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForReply"){
-				return $this->disableReplyForReply();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="addFollow"){
-				return $this->addFollow();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteFollow"){
-				return $this->deleteFollow();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="isUserLogon"){
-				return $this->isUserLogon();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//不用登录也可以执行的动作
+				if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllTopic"){
+					return $this->getAllTopic();
+				}
+				if(isset($_REQUEST['action']) && $_REQUEST['action']=="getTopicDetails"){
+					return $this->getTopicDetails();
+				}
+				if(isset($_REQUEST['action']) && $_REQUEST['action']=="isUserLogon"){
+					return $this->isUserLogon();
+				}
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->topicManager->isUserLogon()){
+					//可以执行的action
+					if($this->topicManager->hasAuthority(CommenUser)){						
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="userLogonInfo"){
+							return $this->userLogonInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfTopicDetails"){
+							return $this->getSelfTopicDetails();
+						}
+						
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="commentTopic"){
+							return $this->commentTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableCommentForTopic"){
+							return $this->disableCommentForTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="getReplysForComment"){
+							return $this->getReplysForComment();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyComment"){
+							return $this->replyComment();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="replyReply"){
+							return $this->replyReply();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForComment"){
+							return $this->disableReplyForComment();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableReplyForReply"){
+							return $this->disableReplyForReply();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="addFollow"){
+							return $this->addFollow();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteFollow"){
+							return $this->deleteFollow();
+						}					
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

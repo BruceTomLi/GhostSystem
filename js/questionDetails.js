@@ -31,70 +31,12 @@ function isUserLogon(){
  * 下面的函数从页面的hidden字段获取问题信息，然后进行解析，之后再动态修改html
  */
 function getQuestionDetails(){
-	var result=$.trim($("#questionDetailsHidden").attr("value"));
-	result=$.parseJSON(result);
-	var questionList="";			
-	result.questionDetails.forEach(function(value,index){
-		questionList+="<h4>"+value.content+"</h4><hr>";
-		questionList+="<p><span>描述：</span>"+value.questionDescription+"</p>";
-		questionList+="<p><span>时间：</span><span>"+value.askDate+"</span></p>";
-		//问题是可用状态下显示添加评论
-		if(value.enable==1){
-			questionList+="<p><button class='btn-link' id='addCommentBtn' value='"+value.questionId+"' onClick='showCommentDiv(this)'>添加评论</button>";
-		}
-		//用户是否关注了问题，有为0和为1的情况，也有用户没登录的情况，用户没登录时不显示
-		if(result.hasUserFollowedQuestion==0){
-			questionList+="<button class='btn-link' id='addFollowBtn' value='"+value.questionId+"' onClick='addQuestionFollow(this)'>添加关注</button></p>";
-		}
-		if(result.hasUserFollowedQuestion==1){
-			questionList+="<button class='btn-link' id='deleteFollowBtn' value='"+value.questionId+"' onClick='deleteQuestionFollow(this)'>取消关注</button></p>";
-		}
-		else{
-			questionList+="</p>";
-		}
-		
-	});
-	$("#questionDetails").html(questionList);
-	
-	var questionAnswers="<h4><span id='commentCount'>"+result.commentCount+"</span>个回复</h4>";
-	questionAnswers+="<hr><ul>";
-	result.questionComments.forEach(function(value,index){
-		questionAnswers+="<li><ul><li>";
-		questionAnswers+="<span><a target='_blank' href='../forum/person.php?userId="+value.commenterId+"'>"+value.commenter+"</a>：</span>";
-		questionAnswers+="<span>"+value.content+"</span>";
-		if(value.isCommenter=="true"){//如果登录者是评论者，就加上删除按钮					
-			questionAnswers+="<button class='btn-link disableBtn' value='"+value.commentId+"' onClick='disableCommentForQuestion(this)'>删除</button>";
-		}
-		if(value.replyCount>0){
-			questionAnswers+="<button class='btn-link detailsBtn' value='"+value.commentId+"' onClick='getReplysForComment(this)'>";
-			questionAnswers+=value.replyCount+"条回复</button>";
-		}				
-		questionAnswers+="<button class='btn-link replyBtn' value='"+value.commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
-		questionAnswers+="<div class='replysForComment'></div></li></ul></li>";
-	});
-	questionAnswers+="</ul>";
-	$("#questionAnswers").html(questionAnswers);
-	
-	$(".detailsDiv").show();
-	$(".questionDetailsDiv").show();
-	$(".queryDiv").hide();
-	$(".editDiv").hide();
-	$(".createDiv").hide();
-}
-
-/**
- * 获取问题详情的函数
- * 需要通过元素的value传入questionId值，以便问题详情页可以显示问题的详细信息
- * 下面的函数被注释掉，是因为我通过将questionId的值传到php页，调用方法直接加载了问题详情信息
- * 这样做的目的是为了在需要显示问题详情的地方，只要传入questionId就可以显示，避免重复
- */
-/*function getQuestionDetails(obj){
-	//通过问题列表页进入问题详情页的时候，使用记录在按钮中的value来记录questionId比用hidden类型的input记录更好一点
-	var questionId=$(obj).attr("value");
-	$.get(
-		"../Controller/QuestionController.php",
-		{action:"getQuestionDetails",questionId:questionId},
-		function(data){
+	var questionId=$.trim($("#questionIdHidden").attr("value"));
+	$.ajax({
+		url:"../Controller/QuestionController.php",
+		// async: false,//默认是true，设置之后，浏览器会在ajax请求执行完之后才执行后面的操作（这个选项是为了动态添加评论和回复使用的）
+		data:{action:"getQuestionDetails",questionId:questionId},
+		success:function(data){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
 			var questionList="";			
@@ -145,8 +87,10 @@ function getQuestionDetails(){
 			$(".editDiv").hide();
 			$(".createDiv").hide();
 		}
-	);	
-}*/
+	});
+}
+
+
 
 
 //显示评论问题的div
@@ -198,30 +142,37 @@ function commentQuestion(obj){
 		{action:"commentQuestion",questionId:questionId,content:content},
 		function(data){
 			var result=$.trim(data);
-			result=$.parseJSON(result);			
-			if(result.isLogon=="true" && result.affectRow==1){
-				alert("评论成功");
-				//动态增加评论信息
-				var newComment="<li><ul><li>";
-				newComment+="<span><a target='_blank' href='../forum/person.php?userId="+result.createdComment[0].commenterId+"'>"+result.createdComment[0].commenter+"</a>：</span>";
-				
-				newComment+="<span>"+result.createdComment[0].content+"</span>";
-				newComment+="<button class='btn-link disableBtn' value='"+result.createdComment[0].commentId+"' onClick='disableCommentForQuestion(this)'>删除</button>";
-				newComment+="<button class='btn-link replyBtn' value='"+result.createdComment[0].commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
-				newComment+="<div class='replysForComment'></div></li></ul></li>";
-				$("#questionAnswers>ul").append(newComment);
-				//动态增加评论数
-				var commentCount=parseInt($("#commentCount").text());
-				$("#commentCount").html(commentCount+1);
-				//动态隐藏评论框
-				$(obj).siblings("textarea").val("");
-				$(obj).parent().hide();
-			}
-			else if(result.isLogon=="false"){
-				alert("您没有登录，请在登录之后进行评论");
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);			
+				if(result.affectRow==1){
+					alert("评论成功");
+					$(obj).siblings("textarea").val("");
+					$(obj).parent().hide();
+					//getQuestionDetails();				
+					//动态增加评论信息
+					var newComment="<li><ul><li>";
+					newComment+="<span><a target='_blank' href='../forum/person.php?userId="+result.createdComment[0].commenterId+"'>"+result.createdComment[0].commenter+"</a>：</span>";
+					
+					newComment+="<span>"+result.createdComment[0].content+"</span>";
+					newComment+="<button class='btn-link disableBtn' value='"+result.createdComment[0].commentId+"' onClick='disableCommentForQuestion(this)'>删除</button>";
+					newComment+="<button class='btn-link replyBtn' value='"+result.createdComment[0].commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
+					newComment+="<div class='replysForComment'></div></li></ul></li>";
+					$("#questionAnswers>ul").append(newComment);
+					//动态增加评论数
+					var commentCount=parseInt($("#commentCount").text());
+					$("#commentCount").html(commentCount+1);
+					//动态隐藏评论框
+					$(obj).siblings("textarea").val("");
+					$(obj).parent().hide();
+				}else{
+					alert("评论失败");
+				}
 			}
 			else{
-				alert("发生了未知错误，请联系管理员");
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);	
@@ -248,6 +199,7 @@ function disableCommentForQuestion(obj){
 			result=$.parseJSON(result);
 			if(result.affectRow==1){
 				alert("删除评论成功!");
+				//getQuestionDetails();
 				//删除成功后直接使用jquery移除网页上的评论，有利于整体优化网站响应速度（比重新加载评论要快）
 				$(obj).parent().parent().parent().remove();
 				//动态减小评论数
@@ -264,7 +216,7 @@ function disableCommentForQuestion(obj){
  * 获取评论的所有回复信息的函数
  * 需要通过元素value传入commentId
  */
-function getReplysForComment(obj){
+function getReplysForComment(obj,isShow="false"){
 	//第一次没有加载的时候就加载，之后就直接显示或者隐藏div就可以了，是通过该div有没有子元素来进行判断的
 	//因为是通过class而不是id来进行选择，所以选择的逻辑要复杂一点
 	if(!($(obj).siblings(".replysForComment").children().length>0)){
@@ -297,7 +249,13 @@ function getReplysForComment(obj){
 	else{
 		$(obj).siblings(".replysForComment").toggle();
 	}	
+	
+	if(isShow=="true"){
+		$(obj).siblings(".replysForComment").show();
+	}
 }
+
+
 /**
  * 显示回复评论的div
  */
@@ -354,40 +312,46 @@ function replyComment(obj){
 		{action:"replyComment",fatherReplyId:fatherReplyId,commentId:commentId,content:content},
 		function(data){
 			var result=$.trim(data);
-			result=$.parseJSON(result);
-			if(result.isLogon=="true" && result.insertRow==1){
-				alert("回复成功");
-				//动态增加回复条数信息
-				var replyCountBtn=$(obj).parent().parent().children("button.detailsBtn").first().children(".replyCountBtn");
-				if(replyCountBtn.length>0){//如果按钮已经存在
-					//获取该值，并将值增加1
-					replyCount=parseInt(replyCountBtn.text());
-					replyCountBtn.html(replyCount+1);
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);
+				if(result.insertRow==1){
+					alert("回复成功");				
+					var replyCommentBtn=$("button.replyBtn[value='"+commentId+"']");	
+					var detailsBtn=$("button.detailsBtn[value='"+commentId+"']");				
+					//getReplysForComment(replyCommentBtn,"true");
+					if(detailsBtn.length>0){
+						var liCount=parseInt(detailsBtn.text())+1;
+						//alert(parseInt(details.text()));
+						detailsBtn.text(liCount+"条回复");
+					}
+					else{
+						detailsBtnHtml="<button class='btn-link detailsBtn' value='"+commentId+"' onClick='getReplysForComment(this)'>";
+						detailsBtnHtml+="1条回复</button>";
+						replyCommentBtn.before(detailsBtnHtml);
+					}
+					//动态增加回复的信息
+					var replyContentHtml="<li><span><a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].replyerId+"'>"+result.replyContent[0].replyer+"</a>&nbsp;";
+					replyContentHtml+="回复&nbsp;<a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].fatherReplyerId+"'>"+result.replyContent[0].fatherReplyer+"</a>：</span>";
+						
+					replyContentHtml+="<span>"+result.replyContent[0].content+"</span>";
+					replyContentHtml+="<input type='hidden' class='commentIdForReplys' value='"+commentId+"'>";
+					replyContentHtml+="<button class='btn-link disableReplyBtn' value='"+result.replyContent[0].replyId+"' onClick='disableReply(this)'>删除</button>";
+					replyContentHtml+="<button class='btn-link replyBtn' value='"+result.replyContent[0].replyId+"' onclick='showReplyReplyDiv(this)'>回复</button>"
+					replyContentHtml+="</li>";
+					//将li增加到上一个li的后面，要注意层次关系
+					replyCommentBtn.siblings(".replysForComment").append(replyContentHtml);
+					//动态删除回复框
+					$(obj).parent().remove();								
 				}
-				else{//不存在时，直接增加html代码
-					replyCountHtml="<button class='btn-link detailsBtn' value='"+commentId+"' onClick='getReplysForComment(this)'>";
-					replyCountHtml+="<span class='replyCountBtn'>1</span>条回复</button>";
-					$(obj).parent().siblings(".replyBtn").first().before(replyCountHtml);
-				}		
-				//动态增加回复的信息
-				var replyContentHtml="<li><span><a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].replyerId+"'>"+result.replyContent[0].replyer+"</a>&nbsp;";
-				replyContentHtml+="回复&nbsp;<a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].fatherReplyerId+"'>"+result.replyContent[0].fatherReplyer+"</a>：</span>";
-					
-				replyContentHtml+="<span>"+result.replyContent[0].content+"</span>";
-				replyContentHtml+="<input type='hidden' class='commentIdForReplys' value='"+commentId+"'>";
-				replyContentHtml+="<button class='btn-link disableReplyBtn' value='"+result.replyContent[0].replyId+"' onClick='disableReply(this)'>删除</button>";
-				replyContentHtml+="<button class='btn-link replyBtn' value='"+result.replyContent[0].replyId+"' onclick='showReplyReplyDiv(this)'>回复</button>"
-				replyContentHtml+="</li>";
-				//将li增加到上一个li的后面，要注意层次关系
-				$(obj).parent().next().append(replyContentHtml);
-				//动态删除回复框
-				$(obj).parent().remove();				
-			}
-			else if(result.isLogon=="false"){
-				alert("您没有登录，请在登录之后进行回复");
+				else{
+					alert("回复失败");
+				}
 			}
 			else{
-				alert("评论失败，发生未知错误，请联系管理员"+result.isLogon);
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);
@@ -407,33 +371,35 @@ function replyReply(obj){
 		{action:"replyReply",fatherReplyId:fatherReplyId,commentId:commentId,content:content},
 		function(data){
 			var result=$.trim(data);
-			result=$.parseJSON(result);
-			if(result.isLogon=="true" && result.insertRow==1){
-				alert("回复成功");
-				//动态增加回复条数信息
-				var replyCountBtn=$(obj).parent().parent().parent().siblings("button.detailsBtn").first().children(".replyCountBtn");
-				// alert("回复条数"+replyCountBtn.text());
-				//获取该值，并将值增加1
-				replyCount=parseInt(replyCountBtn.text());
-				replyCountBtn.html(replyCount+1);
-				//动态增加回复的信息
-				var replyContentHtml="<li><span><a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].replyerId+"'>"+result.replyContent[0].replyer+"</a>&nbsp;";
-				replyContentHtml+="回复&nbsp;<a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].fatherReplyerId+"'>"+result.replyContent[0].fatherReplyer+"</a>：</span>";
-				replyContentHtml+="<span>"+result.replyContent[0].content+"</span>";
-				replyContentHtml+="<input type='hidden' class='commentIdForReplys' value='"+commentId+"'>";
-				replyContentHtml+="<button class='btn-link disableReplyBtn' value='"+result.replyContent[0].replyId+"' onClick='disableReply(this)'>删除</button>";
-				replyContentHtml+="<button class='btn-link replyBtn' value='"+result.replyContent[0].replyId+"' onclick='showReplyReplyDiv(this)'>回复</button>"
-				replyContentHtml+="</li>";
-				//将li增加到上一个li的后面，要注意层次关系
-				$(obj).parent().parent().after(replyContentHtml);
-				//动态删除回复框
-				$(obj).parent().remove();	
-			}
-			else if(result.isLogon=="false"){
-				alert("您没有登录，请在登录之后进行回复");
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);
+				if(result.isLogon=="true" && result.insertRow==1){
+					alert("回复成功");
+					
+					var replyCommentBtn=$("button.replyBtn[value='"+commentId+"']");	
+					var details=$("button.detailsBtn[value='"+commentId+"']");	
+					var liCount=parseInt(details.text())+1;
+					details.text(liCount+"条回复");
+					//动态增加回复的信息
+					var replyContentHtml="<li><span><a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].replyerId+"'>"+result.replyContent[0].replyer+"</a>&nbsp;";
+					replyContentHtml+="回复&nbsp;<a target='_blank' href='../forum/person.php?userId="+result.replyContent[0].fatherReplyerId+"'>"+result.replyContent[0].fatherReplyer+"</a>：</span>";
+					replyContentHtml+="<span>"+result.replyContent[0].content+"</span>";
+					replyContentHtml+="<input type='hidden' class='commentIdForReplys' value='"+commentId+"'>";
+					replyContentHtml+="<button class='btn-link disableReplyBtn' value='"+result.replyContent[0].replyId+"' onClick='disableReply(this)'>删除</button>";
+					replyContentHtml+="<button class='btn-link replyBtn' value='"+result.replyContent[0].replyId+"' onclick='showReplyReplyDiv(this)'>回复</button>"
+					replyContentHtml+="</li>";
+					//将li增加到上一个li的后面，要注意层次关系
+					replyCommentBtn.siblings(".replysForComment").append(replyContentHtml);
+					//动态删除回复框
+					$(obj).parent().remove();					
+				}
+				alert("回复失败");
 			}
 			else{
-				alert("评论失败，发生未知错误，请联系管理员"+result.isLogon);
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);
@@ -443,6 +409,7 @@ function replyReply(obj){
  * 删除一条回复评论的信息
  */
 function disableReply(obj){
+	var commentId=$(obj).siblings("input.commentIdForReplys").attr("value");
 	var replyId=$(obj).attr("value");
 	$.post(
 		"../Controller/QuestionController.php",
@@ -452,17 +419,19 @@ function disableReply(obj){
 			result=$.parseJSON(result);
 			if(result.disableRow==1){
 				alert("删除成功");
+				var replyCommentBtn=$("button.replyBtn[value='"+commentId+"']");	
+				var detailsBtn=$("button.detailsBtn[value='"+commentId+"']");				
+				getReplysForComment(replyCommentBtn,"true");
 				//动态减少回复条数信息
-				var replyCountBtn=$(obj).parent().parent().siblings("button.detailsBtn").first().children(".replyCountBtn");
 				// alert("剩余评论条数"+replyCountBtn.text());
-				if(replyCountBtn.length>0 && parseInt(replyCountBtn.text())>1){//如果按钮已经存在
+				if(detailsBtn.length>0 && parseInt(detailsBtn.text())>1){//如果按钮已经存在
 					//获取该值，并将值减少1
-					replyCount=parseInt(replyCountBtn.text());
-					replyCountBtn.html(replyCount-1);
+					var replyCount=parseInt(detailsBtn.text());
+					detailsBtn.text((replyCount-1)+"条回复");
 				}
 				else{//值等于0时，删除该按钮
-					replyCountBtn.parent().remove();
-				}				
+					detailsBtn.remove();
+				}
 				//删除成功后直接使用jquery移除网页上的评论，有利于整体优化网站响应速度（比重新加载评论要快）
 				$(obj).parent().remove();
 			}

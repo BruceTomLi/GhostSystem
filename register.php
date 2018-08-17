@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html style="height: 100%">
 	<head>
 		<meta charset="UTF-8">
-		<title>Ghost系统注册</title>
+		<title>系统注册</title>
+		<link rel="Shortcut Icon" href="img/logo_ico.gif" />
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 		<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
 		<link href="./bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" type="text/css">
@@ -11,7 +12,7 @@
 		<script src="./bootstrap/js/bootstrap.min.js"></script>
 		<script src="js/register.js"></script>
 	</head>
-	<body>
+	<body style="height: 100%">
 		<div class="container registerBackground">
 			<div class="row-fluid">
 				<div class="span12">
@@ -19,7 +20,7 @@
 						<div class="row-fluid ">
 							<div class="form-horizontal registerForm">
 								<div class="formTitle">
-									<legend>注册新用户</legend>
+									<legend><img src="img/logo.gif" />注册</legend>
 								</div>
 							  	<div class="control-group">
 							    	<div class="controls">
@@ -35,7 +36,7 @@
 							  	</div>
 								<div class="control-group">
 								    <div class="controls">
-								    	<input type="password" id="inputPassword" placeholder="密码">
+								    	<input type="password" id="inputPassword" placeholder="密码(推荐数字,字母,符号组合)">
 								    	<span id="passwordChk"></span>
 								    </div>
 								</div>
@@ -58,10 +59,10 @@
 								    	</div>							  		
 									</div>
 									<div class="control-group">
-								  		<label class="control-label" for="inputJob">职业</label>
+								  		<label class="control-label" for="inputJob">行业</label>
 									    <div class="controls">
 									    	<select id="inputJob">
-									    		<option value="empty">--</option>
+									    		<option value="">--</option>
 									    	</select>
 									    </div>
 									</div>
@@ -102,18 +103,19 @@
 							  </div>
 							  <div class="control-group">
 							    <div class="controls">
-							      <button type="submit" class="btn btn-success" id="registerBtn">注册</button>
-							      <input type="hidden" id="isNameOk" value="false"/>
-							      <input type="hidden" id="isEmailOk" value="false"/>
-							      <input type="hidden" id="isPwdOk" value="false"/>
-							      <span id="regChk"></span>
+							      	<button type="submit" class="btn btn-success" id="registerBtn">注册</button>
+							      	<!--不使用在前台插入标记的方式实现数据检查-->
+							      	<!--<input type="hidden" id="isNameOk" value="false"/>
+							      	<input type="hidden" id="isEmailOk" value="false"/>
+							      	<input type="hidden" id="isPwdOk" value="false"/>-->
+							      	<span id="regChk"></span>
 							    </div>
 							  </div>
 							</div>
-							<hr>	
 						</div>
 						
-						<div class="row-fluid registerFooter">
+						<!--暂时不开发第三方账号登录功能-->
+						<!--<div class="row-fluid registerFooter">
 							<div class="span12">
 								<div class="otherLogin">
 									<p>使用第三方账号直接登录</p>
@@ -121,14 +123,14 @@
 									<a href="#"><img src="img/weibo-login.png"></a></p>
 								</div>
 							</div>
-						</div>
+						</div>-->
 					</div>					
 				
 				</div>
 			</div>
 			<div class="row-fluid">
 				<div class="span12">
-					<p class="copyRight">Copyright © 2018 - 京ICP备11008151号, All Rights Reserved</p>
+					<?php include("View/loginRegisterFooter.php"); ?>
 				</div>
 			</div>
 		</div>

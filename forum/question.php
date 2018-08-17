@@ -1,3 +1,10 @@
+<?php
+	require_once(__DIR__.'/../classes/SessionDBC.php');
+	require_once(__DIR__.'/../Model/User.php');
+	$page=$_REQUEST['page']??1;
+	$user=new User();
+	$hasQuestionAuthority=$user->hasAuthority(CommenUser);
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,10 +15,15 @@
 	<link href="../bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" type="text/css">	
 	<script src="../js/jquery-1.9.1.js"></script>
 	<script src="../bootstrap/js/bootstrap.min.js"></script>
+	<script src="../js/MyPager.js"></script>
 	<script src="../js/question.js"></script>
 	<link href="../css/question.css" rel="stylesheet" type="text/css">
 </head>
 <body>
+	<!--存放页数信息，以便于分页显示-->
+	<div>
+		<input type="hidden" id="pageHidden" value="<?php echo $page; ?>"/>
+	</div>
 	<div class="container-fluid">
 		<div class="row-fluid">
 			<div class="span12" id="questionHeader">
@@ -22,19 +34,24 @@
 			<div class="span12 mainContent">
 				<div class="row-fluid queryDiv">
 					<div class="span9">
-						<h3 class="pull-left">发现</h3>
+						<h3 class="pull-left" id="queryDivTitle" style="font-weight: normal;width:200px;">问题</h3>
+						<?php 
+							if($hasQuestionAuthority){
+								echo "<span style='position:relative;top:20px;left:-100px;'><a target='_blank' href='../manage/selfQuestion.php'>我要提问</a></span>";
+							}
+						?>
 						<ul class="nav nav-tabs pull-right">
-							<li>
-								<a href="#">最新</a>
+							<li class='active' id="latestLi">
+								<a href="#" onclick="getAllQuestion()">最新</a>
 							</li>
-							<li>
-								<a href="#">热门</a>
+							<li id="mostHotLi">
+								<a href="#" onclick="getTenHotQuestions()">热门</a>
 							</li>
-							<li>
-								<a href="#">推荐</a>
+							<li id="recommendLi">
+								<a href="#" onclick="recommendQuestionsByJob()">推荐</a>
 							</li>	
-							<li>
-								<a href="#">等待回复</a>
+							<li id="waitReplyLi">
+								<a href="#" onclick="getWaitReplyQuestions()">等待回复</a>
 							</li>
 						</ul>
 						<table class="table questionTable">								
@@ -93,7 +110,7 @@
 								</tr>
 							</tbody>
 						</table>
-						<div class="pagination">
+						<div class="pagination" id="paginationDiv">
 							<ul>
 								<li>
 									<a href="#">上一页</a>
@@ -118,39 +135,27 @@
 								</li>
 							</ul>
 						</div>
+						
 					</div>
-					
+										
 					<div class="span3 right-nav">
-						<div class="right-nav-item">
-							<span class="pull-left">
-								热门话题
-							</span>
-							<span class="pull-right">
-								<a href="#" class="pull-right">更多 »</a>
-							</span>
-						</div>
-						<hr>
-						<div class="right-nav-item">
-							<span class="pull-left">
-								热门用户
-							</span>
-							<span class="pull-right">
-								<a href="#" class="pull-right">更多 »</a>
-							</span>
-							<table class="table navTable">
-								<tbody>
-									<tr>
-										<td><img src="../img/liuchenghua.jpg"></td>
-										<td>
-											<p><a href="#">某某用户</a></p>
-											<p>2 个问题, 0 次赞同</p>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
+						<?php include(__DIR__."/../View/questionRightNav.php"); ?>
 					</div>
 				</div>	
+				
+				<div class="row-fluid searchResultDiv hide">
+					<div class="span9">
+						<ul class="nav nav-tabs pull-right">
+							<li>
+								<button class="btn-link" id="returnListBtn">返回问题列表</button>
+							</li>
+						</ul>
+						<?php include(__DIR__."/../View/queryedDiv.php"); ?>
+					</div>
+					<div class="span3">
+						<?php include(__DIR__."/../View/questionRightNav.php"); ?>
+					</div>
+				</div>
 				
 				<div class="row-fluid detailsDiv">
 					<div class="span9">
@@ -159,7 +164,7 @@
 								<button class="btn-link" id="returnListBtn">返回问题列表</button>
 							</li>
 						</ul>
-						<?php include(__DIR__."/../View/questionDetails.php"); ?>
+						<?php include(__DIR__."/../View/questionDetails.php"); ?>						
 					</div>
 					
 					<div class="span3">
@@ -173,6 +178,8 @@
 				<?php include(__DIR__."/../View/questionFooter.php"); ?>
 			</div>
 		</div>
+		
+		<?php include(__DIR__."/../View/modals.php"); ?>
 	</div>
 </body>
 </html>

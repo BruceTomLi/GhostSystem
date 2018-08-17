@@ -2,15 +2,13 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
-		<title>Ghost 快捷手册</title>
+		<title>下载</title>
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 		<link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
 		<link href="./bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" type="text/css">
 		<link rel="stylesheet" type="text/css" href="css/handbook.css" />
 		<script src="js/jquery-1.9.1.js"></script>
 		<script src="./bootstrap/js/bootstrap.min.js"></script>
-		<script src="js/loadHeaderFooter.js"></script>
-		<script src="js/loadRightNav.js"></script>
 	</head>
 	<body>
 		<div class="container-fluid">
@@ -24,7 +22,7 @@
 						<div class="span8" id="articleContent">
 							<article class="post page">
 							
-							    <header class="post-head">
+							    <!--<header class="post-head">
 							        <h1 class="post-title">下载 Ghost</h1>
 							    </header>
 							
@@ -69,7 +67,7 @@
 									<ul>
 										<li>最新版本：<a href="http://dl.ghostchina.com/Ghost-0.7.4.zip">Ghost v0.7.4</a></li>
 									</ul>
-							    </section>
+							    </section>-->
 							
 							</article>
 						</div>

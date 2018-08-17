@@ -62,20 +62,36 @@
 		 * 选择要执行哪个动作
 		 */
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllQuestionListForManager"){
-				return $this->getAllQuestionListForManager();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryQuestionsByKeyword"){
-				return $this->queryQuestionsByKeyword();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableQuestion"){
-				return $this->disableQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableQuestion"){
-				return $this->enableQuestion();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteQuestion"){
-				return $this->deleteQuestion();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->questionManager->isUserLogon()){
+					//可以执行的action
+					if($this->questionManager->hasAuthority(QuestionManage)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllQuestionListForManager"){
+							return $this->getAllQuestionListForManager();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryQuestionsByKeyword"){
+							return $this->queryQuestionsByKeyword();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableQuestion"){
+							return $this->disableQuestion();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableQuestion"){
+							return $this->enableQuestion();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteQuestion"){
+							return $this->deleteQuestion();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

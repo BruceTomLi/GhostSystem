@@ -46,6 +46,13 @@ $(function(){
 	$("#province").on("click",function(){
 		getCityList();
 	});
+	
+	/**
+	 * 当密码输入按键抬起时检测密码强度
+	 */
+	$('#inputOldPassword,#inputNewPassword,#inputPasswordAgain').on('keyup',function(){
+		isPasswordOk(this);
+	});
 });
 
 //下面是加载用户信息的函数
@@ -55,9 +62,9 @@ function loadUserInfo(){
 			"../Controller/SelfSettingController.php",
 			{action:"loadUserInfo"},
 			function(data){
-				var userInfo=$.trim(data);
-				userInfo=$.parseJSON(userInfo);
-				userInfo.forEach(function(value,index){
+				var result=$.trim(data);
+				result=$.parseJSON(result);
+				result.userInfo.forEach(function(value,index){
 					$("#inputUsername").val(value.username);
 					$("#inputEmail").val(value.email);
 					if(value.sex==1){
@@ -174,7 +181,7 @@ function changeUserPassword(){
 		var oldPassword=$("#inputOldPassword").val();
 		var newPassword=$("#inputNewPassword").val();
 		$.ajax({
-			url:"../Controller/ManageSelfController.php",
+			url:"../Controller/SelfSettingController.php",
 			data:{action:"changeUserPassword",oldPassword:oldPassword,newPassword:newPassword},
 			success:function(data){
 				var result=$.trim(data);
@@ -207,22 +214,22 @@ function isPasswordOk(obj){
 	var hasSpecialLetter = reSpecialLetter.test(pwd)?1:0;
 	var status = hasNum +hasLetter +hasSpecialLetter;
 	if(pwd.length<6 || pwd.length>18){
-		$(obj).next().html("6<密码长度<18").removeClass().addClass("chkError");
+		$(obj).next().html("<font color='red'>6<密码长度<18</font>");
 		return false;
 	}
 	else{
 		switch(status) {
 			case 1:
-				$(obj).next().html("密码等级：弱").removeClass().addClass("chkWarning");
+				$(obj).next().html("<font color='orange'>密码等级：弱</font>");
 				break;
 			case 2:
-				$(obj).next().html("密码等级：中").removeClass().addClass("chkWarning");	
+				$(obj).next().html("<font color='orange'>密码等级：中</font>");	
 				break;
 			case 3:
-				$(obj).next().html("密码等级：强").removeClass().addClass("chkSuccess");	
+				$(obj).next().html("<img src='../img/action_check.png' />");
 				break;
 			default:
-				$(obj).next().html("密码强度未知").removeClass().addClass("chkError");	
+				$(obj).next().html("<font color='red'>密码等级未知</font>");	
 				break;
 		}
 		return true;
@@ -236,10 +243,11 @@ function isTwoNewPasswordSame(){
 	var newPassword=$("#inputNewPassword").val();
 	var againNewPassword=$("#inputPasswordAgain").val();
 	if(newPassword!=againNewPassword){
-		$("#passwordAgainChk").html("确认密码和新密码不一致").removeClass().addClass("chkError");	
+		$("#passwordAgainChk").html("<font color='red'>确认密码不一致</font>");	
 		return false;
 	}
 	else{
+		$("#passwordAgainChk").html("<img src='../img/action_check.png' />");
 		return true;
 	}
 }
@@ -302,22 +310,17 @@ function getJobList (){
 		url:'../Controller/RegisterController.php',
 		data:{action:"getJobList"},
 		success: function(data) {
-			data = $.trim(data);
-			//$('#inputJob').html(data);
+			var result = $.trim(data);
 			//alert(data);
-			data=$.parseJSON(data);
-			var jobLists="";
+			result=$.parseJSON(result);
+			var jobHtml="";
 			if($('#inputJob').children().length<=1){
-				jobLists=$('#inputJob').html();
+				jobHtml=$('#inputJob').html();
 			}
-			data.forEach(function(value,index){
-				// alert(value.job);
-				//jobLists+="<option value='"+value.job"'>"+value.job+"</option>";
-				jobLists=jobLists+"<option value='"+value.job+"'>"+value.job+"</option>";
-				//jobLists=jobLists+"abc"+value.job;
+			result.jobs.forEach(function(value,index){
+				jobHtml=jobHtml+"<option value='"+value.job+"'>"+value.job+"</option>";
 			});
-			//alert("<select>"+jobLists+"</select>");
-			$('#inputJob').html(jobLists);
+			$('#inputJob').html(jobHtml);
 		}		
 	});
 }

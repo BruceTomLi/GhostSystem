@@ -62,20 +62,36 @@
 		 * 选择要执行哪个动作
 		 */
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllTopicListForManager"){
-				return $this->getAllTopicListForManager();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryTopicsByKeyword"){
-				return $this->queryTopicsByKeyword();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableTopic"){
-				return $this->disableTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableTopic"){
-				return $this->enableTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteTopic"){
-				return $this->deleteTopic();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->topicManager->isUserLogon()){
+					//可以执行的action
+					if($this->topicManager->hasAuthority(TopicManage)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="getAllTopicListForManager"){
+							return $this->getAllTopicListForManager();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="queryTopicsByKeyword"){
+							return $this->queryTopicsByKeyword();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableTopic"){
+							return $this->disableTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableTopic"){
+							return $this->enableTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteTopic"){
+							return $this->deleteTopic();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

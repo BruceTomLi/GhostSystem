@@ -99,6 +99,7 @@
 								<th>用户角色</th>
 								<th>禁用</th>
 								<th>改角色</th>
+								<th>重置密码</th>
 							</tr>							
 						</thead>
 						<tbody>
@@ -137,6 +138,9 @@
 								</td>
 								<td>
 									<button class="btn btn-info editBtn">改角色</button>
+								</td>
+								<td>
+									<button class="btn-link">重置密码</button>
 								</td>
 							</tr>
 							
@@ -226,5 +230,20 @@
 			</footer>	
 				
 		</div>		
+		<!--模态窗体，用户重置用户密码-->
+		<div id="dialogModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		 	<div class="modal-header">
+		    	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		    	<h3 id="myModalLabel">重置用户密码</h3>
+		  	</div>
+		  	<div class="modal-body">
+		    	<p>用户新密码：</p>
+		    	<input type="text" placeholder="用户密码" id="newUserPwd" />
+		 	</div>
+		  	<div class="modal-footer">
+		    	<button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
+		    	<button class="btn btn-primary" id="resetPwdBtn" onclick="resetUserPwd(this)">重置其密码</button>
+		  	</div>
+		</div>
 	</body>
 </html>

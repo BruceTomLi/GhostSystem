@@ -1,3 +1,7 @@
+<script>
+	var shortcutHtml='<link rel="Shortcut Icon" href="img/logo_ico.gif" />';
+	$('head').append(shortcutHtml);
+</script>
 <div id="headerDetails">
 	<!--下面是页面菜单部分-->
 	<div class="row-fluid">
@@ -15,8 +19,7 @@
 								<li><a href="index.php">首页</a></li>
 					      		<li><a href="forum/question.php">论坛</a></li>
 					      		<li><a href="handbook.php">快捷手册</a></li>
-					      		<li><a href="http://docs.ghostchina.com/zh/">中文文档</a></li>
-					      		<li><a href="download.php">下载</a></li>
+					      		<!--<li><a href="download.php">下载</a></li>-->
 					      		<li><a href="about.php">关于</a></li>							
 							</ul>
 						</div>								

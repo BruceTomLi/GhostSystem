@@ -23,29 +23,60 @@ $(function(){
 	//加载问题分类，用于用户在创建问题时选择
 	loadQuestionTypes();
 	
+	//如果是从文章页创建问题，就显示创建的div
+	createQuestionByArticleTitle();
+	
 });
+
+/**
+ * 如果是从文章页创建问题，就显示创建的div
+ */
+function createQuestionByArticleTitle(){
+	var articleTitle=$("#articleTitleHidden").attr("value");
+	if(articleTitle!=""){
+		$("#inputQuestionContent").val(articleTitle);
+		showCreate();
+	}
+}
 
 function loadKeyword(){
 	var keyword=$("#keywordHidden").attr("value");
 	$("#keyword").val(keyword);
 }
+//对用户输入的字符进行编码，防止script注入攻击，在服务器端进行编码和验证才安全
+// function htmlEncodeJQ ( str ) {
+  // return $('<span/>').text( str ).html();
+// }
+ // 
+// function htmlDecodeJQ ( str ) {
+  // return $('<span/>').html( str ).text();
+// }
 
 function createNewQuestion(){
 	var inputQuestionType=$("#inputQuestionType").val();
 	var inputQuestionContent=$("#inputQuestionContent").val();
 	var questionDescription=$("#editor").html();
+	var token=$("#token").val();
 	$.post(
 		"../Controller/SelfQuestionController.php",
-		{action:"createNewQuestion",questionType:inputQuestionType,
+		{action:"createNewQuestion",token:token,questionType:inputQuestionType,
 			questionContent:inputQuestionContent,questionDescription:questionDescription},
 		function(data){
 			var result=$.trim(data);
-			if(result==1){
-				alert("问题添加成功");
-				getSelfQuestionList();
-			}
-			else{
-				alert("问题添加失败，请检查是否为重复问题"+result);
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);
+				if(result.count==1){
+					alert("问题添加成功");
+					getSelfQuestionList();
+				}
+				else{
+					alert("问题添加失败，检测问题标题是否重复了");
+				}
+			}else{
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);

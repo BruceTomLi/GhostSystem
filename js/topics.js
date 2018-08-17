@@ -31,7 +31,7 @@ function getAllTopicListForManager(){
 				else{
 					topicList+="<td class='forSelectMulti'><label class='checkbox'><input type='checkbox' value='"+value.topicId+"'></label></td>";
 				}
-				topicList+="<td>"+value.askerName+"</td>";
+				topicList+="<td><a target='_blank' href='../forum/person.php?userId="+value.askerId+"'>"+value.askerName+"</a></td>";
 				topicList+="<td>"+value.askDate+"</td>";
 				topicList+="<td>"+value.topicType+"</td>";
 				topicList+="<td><a target='_blank' href='../forum/topicDetails.php?topicId="+value.topicId+"'>"+value.content+"</a></td>";
@@ -80,7 +80,7 @@ function queryTopicsByKeyword(){
 				else{
 					topicList+="<td class='forSelectMulti'><label class='checkbox'><input type='checkbox' value='"+value.topicId+"'></label></td>";
 				}
-				topicList+="<td>"+value.asker+"</td>";
+				topicList+="<td><a target='_blank' href='../forum/person.php?userId="+value.askerId+"'>"+value.asker+"</a></td>";
 				topicList+="<td>"+value.askDate+"</td>";
 				topicList+="<td>"+value.topicType+"</td>";
 				topicList+="<td><a target='_blank' href='../forum/topicDetails.php?topicId="+value.topicId+"'>"+value.content+"</a></td>";

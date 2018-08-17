@@ -1,4 +1,3 @@
-//注册页面加载时的起始事件
 $(function(){
 	getArticleList();
 });
@@ -8,10 +7,13 @@ function getArticleList(){
 	var page=$.trim($("#pageHidden").attr("value"));
 	page=$.isNumeric(page)?page:1;//不是数字时设为1
 	page=page<1?1:page;//小于1时设为1
-	$.get(
-		"Controller/IndexController.php",
-		{action:"getArticleList",page:page},
-		function(data){
+	$.ajax({
+		url:"Controller/IndexController.php",
+		data:{action:"getArticleList",page:page},
+		beforeSend:function(){
+			$("#loadingModal").modal('show');
+		},
+		success:function(data){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
 			var articlesHtml="";
@@ -20,7 +22,7 @@ function getArticleList(){
 				articlesHtml+="<h1 class='artilceTitle'>"+value.title+"</h1>";
 				articlesHtml+="<span>作者："+value.author+" - "+value.publishDate+"</span>";
 				var onlyText="";//要先过滤掉特殊的html代码，只留下纯文本
-				var sourceHtml=value.content;
+				var sourceHtml=value.articleContent;
 				var reg=new RegExp("<[^<]*>", "gi");  
 				onlyText=sourceHtml.replace(reg,"");
 				articlesHtml+="<p>"+onlyText.substr(0,100)+"</p>";
@@ -29,6 +31,7 @@ function getArticleList(){
 			});
 			$("#articleDetail").html(articlesHtml);
 			writePager(result,page,"index.php");
+			$("#loadingModal").modal('hide');
 		}
-	);
+	});
 }

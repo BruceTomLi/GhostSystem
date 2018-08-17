@@ -8,13 +8,20 @@
 		
 		function setUp(){
 			$this->topicManager=new TopicManager();
+			$username=UserName;
+			$password=Password;
+			$this->topicManager->login($password, $username);
 		} 
+		//执行每个测试后退出系统
+		function tearDown(){
+			$this->topicManager->logout();
+		}
 		/**
 		 * 下面的代码测试问题管理员加载所有的问题列表
 		 */
 		function testGetAllTopicList(){
 			$result=$this->topicManager->getAllTopicList();
-			$this->assertTrue(count($result)>0);
+			$this->assertTrue(is_array($result) && count($result)>0);
 		}
 		
 		/**
@@ -23,39 +30,23 @@
 		function testGetTopicDetails(){
 			$topicId=TopicId;
 			$result=$this->topicManager->getTopicDetails($topicId);
-			$this->assertTrue(count($result)>0);
+			$this->assertTrue(is_array($result) && count($result)>0);
 		}
 		/**
 		 * 测试为管理员获取所有问题
 		 */
 		function testGetAllTopicListForManager(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->topicManager->login($password, $username);
-			
 			$topics=$this->topicManager->getAllTopicListForManager();
-			$this->assertTrue(count($topics)>0);
-			
-			//测试完之后退出登录
-			$this->topicManager->logout();
+			$this->assertTrue(is_array($topics) && count($topics)>0);
 		}
 		
 		/**
 		 * 测试检索问题
 		 */
 		function testQueryTopicsByKeyword(){
-			//测试这个功能需要先登录
-			$username=UserName;
-			$password=Password;
-			$this->topicManager->login($password, $username);
-			
 			$keyword="测试";
 			$topics=$this->topicManager->queryTopicsByKeyword($keyword);
-			$this->assertTrue(count($topics)>0);
-			
-			//测试完之后退出登录
-			$this->topicManager->logout();
+			$this->assertTrue(is_array($topics) && count($topics)>0);
 		}
 		
 	}

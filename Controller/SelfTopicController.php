@@ -8,14 +8,27 @@
 		public function __construct(){
 			$this->user=new User();
 			$this->topicManager=new TopicManager();
-		}
-				
+		}				
 		
 		public function createNewTopic(){
-			$topicType=$_REQUEST['topicType'];
-			$topicContent=$_REQUEST['topicContent'];
-			$topicDescription=$_REQUEST['topicDescription'];
-			return $this->user->createNewTopic($topicType, $topicContent, $topicDescription);
+			$token=$_REQUEST['token']??"";
+			if($token==$_SESSION['token']){
+				$topicType=$_REQUEST['topicType'];
+				$topicContent=substr(trim($_REQUEST['topicContent']??""),0,250);
+				$topicDescription=$_REQUEST['topicDescription'];
+				$size=strlen($topicDescription);
+				if($size<2000){
+					$count=$this->user->createNewTopic($topicType, $topicContent, $topicDescription);
+					if(is_numeric($count)){
+						$count=array("count"=>$count);
+					}
+					return json_encode($count);
+				}else{
+					return json_encode(urlencode("话题内容长度超过上限（最多1K字）"));
+				}
+			}else{
+				return json_encode(urlencode("该请求被认为是骇客CSRF攻击"));
+			}
 		}
 		
 		public function getSelfTopicList(){
@@ -71,26 +84,42 @@
 		}
 		
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="createNewTopic"){
-				return $this->createNewTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfTopicList"){
-				return $this->getSelfTopicList();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchTopicListByContentOrDescription"){
-				return $this->searchTopicListByContentOrDescription();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfTopic"){
-				return $this->disableSelfTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableSelfTopic"){
-				return $this->enableSelfTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfTopic"){
-				return $this->deleteSelfTopic();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadTopicTypes"){
-				return $this->loadTopicTypes();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->user->isUserLogon()){
+					//可以执行的action
+					if($this->user->hasAuthority(CommenUser)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="createNewTopic"){
+							return $this->createNewTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="getSelfTopicList"){
+							return $this->getSelfTopicList();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchTopicListByContentOrDescription"){
+							return $this->searchTopicListByContentOrDescription();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableSelfTopic"){
+							return $this->disableSelfTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableSelfTopic"){
+							return $this->enableSelfTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="deleteSelfTopic"){
+							return $this->deleteSelfTopic();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadTopicTypes"){
+							return $this->loadTopicTypes();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

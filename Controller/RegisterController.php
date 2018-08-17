@@ -64,22 +64,9 @@
 		
 		public function getJobList(){
 			$jobLists = $this->user->getJobList();
-			//print_r($jobList);
-			/*foreach ($jobLists  as $key => $value) {
-				foreach($value as $key2 => $value2) {
-					$jobOptions.= "<option value='$value2'>$value2</option>";
-				}
-			}*/
-			//print_r($jobLists);
-			//echo "<br>";
-			$jobListsJson=json_encode($jobLists);
-			//$jobListsJson=$jobLists;
-			if(!empty($jobListsJson)){
-				return $jobListsJson;
-			}
-			else{
-				return '未获取到职业列表';
-			}
+			$resultArr=array("jobs"=>$jobLists);
+			$result=json_encode($resultArr);
+			return $result;
 		}
 		/**
 		 * 加载省份列表
@@ -116,8 +103,7 @@
 				return $cityLists;
 			}else {
 				return '未获取到城市列表';
-			}
-			
+			}			
 		}
 		
 		//getCityList();
@@ -129,27 +115,21 @@
 				if(isset($_GET['action']) && $_GET['action']=="chkUsername"){
 					return $this->chkUsername();
 				}
-				else if(isset($_GET['action']) && $_GET['action']=="chkEmail"){
+				if(isset($_GET['action']) && $_GET['action']=="chkEmail"){
 					return $this->chkEmail();
 				}
-				else if(isset($_POST['action']) && $_POST['action']=="register"){
+				if(isset($_POST['action']) && $_POST['action']=="register"){
 					return $this->register();
 				}
-				else if(isset($_GET['action']) && $_GET['action']=="getJobList"){
+				if(isset($_GET['action']) && $_GET['action']=="getJobList"){
 					return $this->getJobList();
 				}
-				else if(isset($_GET['action']) && $_GET['action']=="getProvinceList"){
+				if(isset($_GET['action']) && $_GET['action']=="getProvinceList"){
 					return $this->getProvinceList();
 				}
-				else if(isset($_GET['action']) && $_GET['action']=="getCityList"){
+				if(isset($_GET['action']) && $_GET['action']=="getCityList"){
 					return $this->getCityList();
 				}
-				else{
-					return "请求动作不正确";
-				}
-			}		
-			else{
-				return "没有使用请求动作";
 			}
 		}
 	}

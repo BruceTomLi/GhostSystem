@@ -84,6 +84,7 @@ function loadAllUserInfo(){
 					usersHtml+="<td><button class='btn btn-success' onclick='enableUser(this)' value='"+value.userId+"'>启用</button></td>";
 				}
 				usersHtml+="<td><button class='btn btn-info editBtn' value='"+value.userId+"' onclick='showEdit(this)'>改角色</button></td>";
+				usersHtml+="<td><button class='btn-link' value='"+value.userId+"' onclick='resetUserPwd(this)'>重置密码</button></td>";
 				usersHtml+="</tr>";
 			});
 			$("#usersTable tbody").html(usersHtml);
@@ -112,7 +113,7 @@ function backUserList(){
  * 显示所有用户信息
  */
 function showQueryDiv(){
-	loadAllUserInfo();
+	searchUserByKeyword();
 	$(".editDiv").hide();
 	$(".queryDiv").show();
 }
@@ -132,7 +133,7 @@ function loadUserRoleInfo(obj){
 				$("#username").text(value.username);
 				$("#email").text(value.email);
 				var roles=value.roleIds.split(',');	
-				var checkboxes=$("#editUserDiv input:checkbox");
+				var checkboxes=$("#userRoleDiv input:checkbox");
 				//在进行遍历的时候，可以用for，each等不同的方法，重点是在jquery1.9中，对checkbox的选中和不选操作，要用prop进行
 				//使用attr只能操作一次
 				for(var i=0;i<checkboxes.length;i++){
@@ -160,10 +161,13 @@ function loadAllRoles(){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
 			var roleHtml="<option>所有角色</option>";
+			var editRoleHtml="";
 			result.forEach(function(value,index){
 				roleHtml+="<option value='"+value.name+"'>"+value.name+"</option>";
+				editRoleHtml+="<label class='checkbox'><input type='checkbox' value='"+value.roleId+"'>"+value.name+"</input></label>";
 			});
 			$("#selectRole").html(roleHtml);
+			$("#userRoleDiv").html(editRoleHtml);
 		}
 	);
 }
@@ -266,6 +270,7 @@ function searchUserByKeyword(){
 					usersHtml+="<td><button class='btn btn-success' onclick='enableUser(this)' value='"+value.userId+"'>启用</button></td>";
 				}
 				usersHtml+="<td><button class='btn btn-info editBtn' value='"+value.userId+"' onclick='showEdit(this)'>改角色</button></td>";
+				usersHtml+="<td><button class='btn-link' value='"+value.userId+"' onclick='showResetPwdDiv(this)'>重置密码</button></td>";
 				usersHtml+="</tr>";
 			});
 			$("#usersTable tbody").html(usersHtml);
@@ -276,6 +281,37 @@ function searchUserByKeyword(){
 			writePager(result,page,"user.php",paras);
 		}
 	);
+}
+
+/**
+ * 显示重置密码的模态窗体
+ */
+function showResetPwdDiv(obj){
+	var userId=$(obj).attr("value");
+	$("#resetPwdBtn").attr("value",userId);
+	$("#dialogModal").modal('show');
+}
+
+/**
+ * 重置用户密码
+ */
+function resetUserPwd(obj){
+	var userId=$(obj).attr("value");
+	var newPassword=$("#newUserPwd").val();
+	$.ajax({
+		url:"../Controller/UserController.php",
+		data:{action:"resetUserPassword",userId:userId,newPassword:newPassword},
+		success:function(data){
+			var result=$.trim(data);
+			result=$.parseJSON(result);
+			if(result.count==1){
+				alert("已经重置了该用户的密码");
+				$("#dialogModal").modal('hide');
+			}else{
+				alert("重置密码失败");
+			}
+		}
+	});
 }
 
 /**

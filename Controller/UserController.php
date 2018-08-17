@@ -104,37 +104,66 @@
 			return json_encode($resultArr);
 		}
 		
-		
+		/**
+		 * 重置用户的密码
+		 */
+		public function resetUserPassword(){
+			$userId=$_REQUEST['userId']??"";
+			$newPassword=trim($_REQUEST['newPassword']??"");
+			$count=($this->userManager->resetUserPassword($userId, $newPassword))??0;
+			$resultArr=array("count"=>$count);
+			return json_encode($resultArr);
+		}
+		 
 		/**
 		 * 选择要执行哪个动作
 		 */
 		public function selectAction(){
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAllUserInfo"){
-				return $this->loadAllUserInfo();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserRoleInfo"){
-				return $this->loadUserRoleInfo();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAllRoles"){
-				return $this->loadAllRoles();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="updateUserRoleInfo"){
-				return $this->updateUserRoleInfo();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchUserByKeyword"){
-				return $this->searchUserByKeyword();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableUser"){
-				return $this->disableUser();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableUser"){
-				return $this->enableUser();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableQueryUsers"){
-				return $this->disableQueryUsers();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableQueryUsers"){
-				return $this->enableQueryUsers();
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->userManager->isUserLogon()){
+					//可以执行的action
+					if($this->userManager->hasAuthority(UserManage)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAllUserInfo"){
+							return $this->loadAllUserInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserRoleInfo"){
+							return $this->loadUserRoleInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadAllRoles"){
+							return $this->loadAllRoles();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="updateUserRoleInfo"){
+							return $this->updateUserRoleInfo();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="searchUserByKeyword"){
+							return $this->searchUserByKeyword();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableUser"){
+							return $this->disableUser();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableUser"){
+							return $this->enableUser();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="disableQueryUsers"){
+							return $this->disableQueryUsers();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="enableQueryUsers"){
+							return $this->enableQueryUsers();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="resetUserPassword"){
+							return $this->resetUserPassword();
+						}
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
 		}
 	}

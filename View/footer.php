@@ -6,31 +6,31 @@
 				<li class="span4">
 					<div>
 						<h3>
-							改进型哈佛结构
+							Bootstrap友链
 						</h3>
-						<p>
-							改进型的哈佛结构具有一条独立的地址总线和一条独立的数据总线，两条总线由程序存储器和数据存储器分时复用，使结构更紧凑。
-						</p>
+						<p><a target="_blank" href="http://www.bootcss.com/">bootstrap中文网</a></p>
+						<p><a target="_blank" href="http://layoutit.justjavac.com/">bootstrap布局</a></p>
+						<p><a target="_blank" href="https://getbootstrap.com/docs/3.3/customize/">bootstrap定制</a></p>
 					</div>
 				</li>
 				<li class="span4">
 					<div>
 						<h3>
-							改进型哈佛结构
+							PHP友链
 						</h3>
-						<p>
-							改进型的哈佛结构具有一条独立的地址总线和一条独立的数据总线，两条总线由程序存储器和数据存储器分时复用，使结构更紧凑。
-						</p>
+						<p><a target="_blank" href="http://www.php.net/">php官网</a></p>
+						<p><a target="_blank" href="http://www.w3school.com.cn/php/">W3CSchool</a></p>
+						<p><a target="_blank" href="http://www.runoob.com/php/php-tutorial.html">初学</a></p>
 					</div>
 				</li>
 				<li class="span4">
 					<div>
 						<h3>
-							改进型哈佛结构
+							Mysql友链
 						</h3>
-						<p>
-							改进型的哈佛结构具有一条独立的地址总线和一条独立的数据总线，两条总线由程序存储器和数据存储器分时复用，使结构更紧凑。
-						</p>
+						<p><a target="_blank" href="https://www.mysql.com/">mysql官网</a></p>
+						<p><a target="_blank" href="https://github.com/">github</a></p>
+						<p><a target="_blank" href="http://www.runoob.com/mysql/mysql-tutorial.html">初学</a></p>
 					</div>
 				</li>
 			</ul>

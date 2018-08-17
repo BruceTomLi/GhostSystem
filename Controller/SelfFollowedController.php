@@ -49,20 +49,35 @@
 		}
 		
 		
-		public function selectAction(){			
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedQuestions"){
-				return $this->loadUserFollowedQuestions();
+		public function selectAction(){
+			//判断有没有请求动作，因为有php页面直接调用
+			if(isset($_REQUEST['action'])){
+				//用户需要登录系统，并且有权限才能执行相应的action
+				if($this->user->isUserLogon()){
+					//可以执行的action
+					if($this->user->hasAuthority(CommenUser)){
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedQuestions"){
+							return $this->loadUserFollowedQuestions();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedTopics"){
+							return $this->loadUserFollowedTopics();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedUsers"){
+							return $this->loadUserFollowedUsers();
+						}	
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="cancelFollowUser"){
+							return $this->cancelFollowUser();
+						}	
+					}
+					//否则返回无权限信息
+					else{
+						return NoAuthority;
+					}
+				}
+				else{
+					return NotLogon;
+				}
 			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedTopics"){
-				return $this->loadUserFollowedTopics();
-			}
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="loadUserFollowedUsers"){
-				return $this->loadUserFollowedUsers();
-			}	
-			if(isset($_REQUEST['action']) && $_REQUEST['action']=="cancelFollowUser"){
-				return $this->cancelFollowUser();
-			}	
-			return "没有发送合适的请求";
 		}
 	}
 	

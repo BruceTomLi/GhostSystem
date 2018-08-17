@@ -20,12 +20,12 @@
 			<!--下面是页面主体部分-->
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
-					<div class="selfManageMenu">	
+					<!--<div class="selfManageMenu">	
 						<form class="form-search input-append pull-left">
 							<input class="input-medium" type="text" placeholder="粉丝名称" /> 
 							<button type="submit" class="btn">查找</button>
 						</form>						
-					</div>
+					</div>-->
 					<div class="selfTableDiv">
 						<table class="table" id="fansTable">		
 							<thead>
@@ -34,6 +34,7 @@
 									<th>粉丝称呼</th>
 									<th>粉丝性别</th>
 									<th>粉丝邮箱</th>
+									<th>一句话介绍</th>
 								</tr>							
 							</thead>
 							<tbody>
@@ -50,10 +51,13 @@
 									<td>
 										wangwu@123.com
 									</td>
+									<td>
+										我是一个程序员
+									</td>
 								</tr>							
 							</tbody>
 						</table>
-						<div class="pagination">
+						<!--<div class="pagination">
 							<ul>
 								<li>
 									<a href="#">上一页</a>
@@ -77,7 +81,7 @@
 									<a href="#">下一页</a>
 								</li>
 							</ul>
-						</div>
+						</div>-->
 					</div>
 					
 				</div>

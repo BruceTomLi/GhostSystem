@@ -1,9 +1,6 @@
 <?php
 	// 这个页面会在论坛页，用户个人话题页，话题管理员页中被使用，所以把它抽象出来，避免在三个地方重复
-	require_once(__DIR__."/../Controller/TopicController.php");
-	$topicController=new TopicController();
-	//获取到结果就可以了，之后让后台的js去解析结果
-	$result=$topicController->getTopicDetails();
+	$topicId=$_REQUEST['topicId']??"";
 ?>
 
 <!DOCTYPE html>
@@ -21,7 +18,9 @@
 </head>
 <body>
 	<!--将php中获取的话题信息存入隐藏字段，然后让js解析它，避免将大量php的代码解析逻辑写到html页面上-->
-	<div><input id="topicDetailsHidden" type="hidden" value='<?php echo $result; ?>'/></div>
+	<div>
+		<input id="topicIdHidden" type="hidden" value='<?php echo $topicId; ?>'/>
+	</div>
 	<div class="container-fluid">
 		<div class="row-fluid">
 			<div class="span12" id="questionHeader">
@@ -56,7 +55,7 @@
 							</div>
 						</section>	
 						<section id="topicAnswers">
-							<h4>4个回复</h4>
+							<!--<h4>4个回复</h4>
 							<hr>
 							<ul>
 								<li>
@@ -94,7 +93,7 @@
 										</div>										
 									</ul>
 								</li>				
-							</ul>	
+							</ul>	-->
 						</section>
 						
 					</div>

@@ -10,36 +10,29 @@
 		 * 下面的函数增加角色信息
 		 */
 		function addRole($roleName,$note,$authorities){
-			if($this->isUserLogon()){
-				if(!$this->isRoleNameRepeat($roleName)){
-					global $pdo;				
-					//在权限表中添加权限信息
-					$roleId=uniqid("",true);
-					$paraArr=array(":roleId"=>$roleId,":roleName"=>$roleName,":note"=>$note,":enable"=>"1");
-					$sql="insert into tb_role values(:roleId,:roleName,:note,:enable)";
-					$affectRow=$pdo->getUIDResult($sql,$paraArr);
-					//在权限角色表中添加角色的权限信息
-					$authorityArr=explode(",", $authorities);
-					$authRoleRow=0;
-					foreach($authorityArr as $authorityId){
-						$paraArr=array(":authorityId"=>$authorityId,":roleId"=>$roleId);
-						$sql="insert into tb_roleauthority values(:roleId,:authorityId)";
-						if($pdo->getUIDResult($sql,$paraArr)==1){
-							$authRoleRow++;
-						}
+			if(!$this->isRoleNameRepeat($roleName)){
+				global $pdo;				
+				//在权限表中添加权限信息
+				$roleId=uniqid("",true);
+				$paraArr=array(":roleId"=>$roleId,":roleName"=>$roleName,":note"=>$note,":enable"=>"1");
+				$sql="insert into tb_role values(:roleId,:roleName,:note,:enable)";
+				$affectRow=$pdo->getUIDResult($sql,$paraArr);
+				//在权限角色表中添加角色的权限信息
+				$authorityArr=explode(",", $authorities);
+				$authRoleRow=0;
+				foreach($authorityArr as $authorityId){
+					$paraArr=array(":authorityId"=>$authorityId,":roleId"=>$roleId);
+					$sql="insert into tb_roleauthority values(:roleId,:authorityId)";
+					if($pdo->getUIDResult($sql,$paraArr)==1){
+						$authRoleRow++;
 					}
-					//记录添加的角色信息行数和角色权限信息行数
-					$affectArr=array("affectRow"=>$affectRow,"authRoleRow"=>$authRoleRow);					
-					return $affectArr;
 				}
-				else{
-					$affectArr=array("affectRow"=>"角色名重复，请修改角色名");					
-					return $affectArr;
-				}
+				//记录添加的角色信息行数和角色权限信息行数
+				$affectArr=array("affectRow"=>$affectRow,"authRoleRow"=>$authRoleRow);					
+				return $affectArr;
 			}
 			else{
-				$affectArr=array("affectRow"=>"未登录系统或者身份不是角色管理员，无法进行该操作");
-				return $affectArr;
+				return "角色名重复，请修改角色名";
 			}
 		}
 		
@@ -63,50 +56,35 @@
 		 * 加载角色信息
 		 */
 		function loadRoles(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$sql="call pro_getRolesAndAuths()";
-				$roles=$pdo->getQueryResult($sql);
-				//因为可以在mysql数据库中查询出每个角色对应的权限信息，并且以字符串的形式（一个字段）返回
-				//所以这里就不需要去foreach循环获取每个role的权限，比较之下，在mysql中进行运算效率要高一些
-				return $roles;
-			}
-			else{
-				return "未登录系统，无法进行该操作";
-			}
+			global $pdo;
+			$sql="call pro_getRolesAndAuths()";
+			$roles=$pdo->getQueryResult($sql);
+			//因为可以在mysql数据库中查询出每个角色对应的权限信息，并且以字符串的形式（一个字段）返回
+			//所以这里就不需要去foreach循环获取每个role的权限，比较之下，在mysql中进行运算效率要高一些
+			return $roles;
 		}
 		
 		/**
 		 * 加载某个角色的信息
 		 */
 		function loadRoleInfoByRoleId($roleId){
-			if($this->isUserLogon()){
-				global $pdo;
-				$paraArr=array(":roleId"=>$roleId);
-				$sql="call pro_getRolesAndAuthsByRoleId(:roleId)";
-				$roleInfo=$pdo->getQueryResult($sql,$paraArr);
-				//因为可以在mysql数据库中查询出每个角色对应的权限信息，并且以字符串的形式（一个字段）返回
-				//所以这里就不需要去foreach循环获取每个role的权限，比较之下，在mysql中进行运算效率要高一些
-				return $roleInfo;
-			}
-			else{
-				return "未登录系统，无法进行该操作";
-			}
+			global $pdo;
+			$paraArr=array(":roleId"=>$roleId);
+			$sql="call pro_getRolesAndAuthsByRoleId(:roleId)";
+			$roleInfo=$pdo->getQueryResult($sql,$paraArr);
+			//因为可以在mysql数据库中查询出每个角色对应的权限信息，并且以字符串的形式（一个字段）返回
+			//所以这里就不需要去foreach循环获取每个role的权限，比较之下，在mysql中进行运算效率要高一些
+			return $roleInfo;
 		}
 		/**
 		 * 加载权限信息
 		 * 角色管理里面也需要加载权限信息，因为需要给角色分配相应的权限
 		 */
 		function loadAuthorityInfo(){
-			if($this->isUserLogon()){
-				global $pdo;
-				$sql="select * from tb_authority";
-				$authorities=$pdo->getQueryResult($sql);
-				return $authorities;
-			}
-			else{
-				return "未登录系统，无法进行该操作";
-			}
+			global $pdo;
+			$sql="select * from tb_authority";
+			$authorities=$pdo->getQueryResult($sql);
+			return $authorities;
 		}
 		
 		/**
@@ -114,38 +92,32 @@
 		 * 传入的参数是角色的信息数组
 		 */
 		function changeRoleInfo($roleInfo){
-		 	if($this->isUserLogon()){
-				global $pdo;
-				//从数组中解析出角色信息
-				$roleId=$roleInfo['roleId'];
-				$roleName=$roleInfo['name'];
-				$note=$roleInfo['note'];
-				$authorities=$roleInfo['authorities'];
-				$authArr=explode(",", $authorities);
-				//修改tb_role信息
-				$paraArr=array(":roleId"=>$roleId,":name"=>$roleName,":note"=>$note);
-				$sql="update tb_role set name=:name,note=:note where roleId=:roleId";
-				$roleUpdateRow=$pdo->getUIDResult($sql,$paraArr);
-				//修改tb_roleAuthority信息，先删除原来的信息，在插入新的信息（避免需要对比新旧权限的复杂逻辑）
-				$paraArr=array(":roleId"=>$roleId);
-				$sql="delete from tb_roleauthority where roleId=:roleId";
-				$roleAuthDeleteRow=$pdo->getUIDResult($sql,$paraArr);
-				$roleAuthAddRow=0;
-				foreach($authArr as $auth){
-					$paraArr=array(":authorityId"=>$auth,":roleId"=>$roleId);
-					$sql="insert into tb_roleauthority values(:roleId,:authorityId)";
-					if($pdo->getUIDResult($sql,$paraArr)==1){
-						$roleAuthAddRow++;
-					}
+			global $pdo;
+			//从数组中解析出角色信息
+			$roleId=$roleInfo['roleId'];
+			$roleName=$roleInfo['name'];
+			$note=$roleInfo['note'];
+			$authorities=$roleInfo['authorities'];
+			$authArr=explode(",", $authorities);
+			//修改tb_role信息
+			$paraArr=array(":roleId"=>$roleId,":name"=>$roleName,":note"=>$note);
+			$sql="update tb_role set name=:name,note=:note where roleId=:roleId";
+			$roleUpdateRow=$pdo->getUIDResult($sql,$paraArr);
+			//修改tb_roleAuthority信息，先删除原来的信息，在插入新的信息（避免需要对比新旧权限的复杂逻辑）
+			$paraArr=array(":roleId"=>$roleId);
+			$sql="delete from tb_roleauthority where roleId=:roleId";
+			$roleAuthDeleteRow=$pdo->getUIDResult($sql,$paraArr);
+			$roleAuthAddRow=0;
+			foreach($authArr as $auth){
+				$paraArr=array(":authorityId"=>$auth,":roleId"=>$roleId);
+				$sql="insert into tb_roleauthority values(:roleId,:authorityId)";
+				if($pdo->getUIDResult($sql,$paraArr)==1){
+					$roleAuthAddRow++;
 				}
-				//总结对数据库的影响并返回
-				$resultArr=array("roleUpdateRow"=>$roleUpdateRow,"roleAuthDeleteRow"=>$roleAuthDeleteRow,"roleAuthAddRow"=>$roleAuthAddRow);
-				return $resultArr;
 			}
-			else{
-				$resultArr=array("roleUpdateRow"=>"未登录系统，无法进行该操作");
-				return $resultArr;
-			}
+			//总结对数据库的影响并返回
+			$resultArr=array("roleUpdateRow"=>$roleUpdateRow,"roleAuthDeleteRow"=>$roleAuthDeleteRow,"roleAuthAddRow"=>$roleAuthAddRow);
+			return $resultArr;
 		}
 
 		/**
@@ -154,16 +126,11 @@
 		 * 还需要删除角色权限表中的记录。不过我在mysql数据库中设置了外键关联删除，所以代码中可以不写相应的删除逻辑
 		 */
 		function deleteRole($roleId){
-			if($this->isUserLogon()){
-				global $pdo;
-				$paraArr=array(":roleId"=>$roleId);
-				$sql="delete from tb_role where roleId=:roleId";
-				$deleteRow=$pdo->getUIDResult($sql,$paraArr);
-				return $deleteRow;
-			}
-			else{
-				return "未登录系统，无法进行该操作";
-			}
+			global $pdo;
+			$paraArr=array(":roleId"=>$roleId);
+			$sql="delete from tb_role where roleId=:roleId";
+			$deleteRow=$pdo->getUIDResult($sql,$paraArr);
+			return $deleteRow;
 		}
 		
 	}
