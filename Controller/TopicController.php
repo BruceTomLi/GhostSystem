@@ -59,18 +59,12 @@
 		public function commentTopic(){
 			$topicId=$_REQUEST['topicId'];
 			$content=$_REQUEST['content'];
-			$result="";
-			if($this->user->isUserLogon()){
-				$resultArr=$this->user->commentTopic($topicId, $content);
-				$resultArr["isLogon"]="true";
-				$result=json_encode($resultArr);
+			$result=$this->user->commentTopic($topicId, $content);
+			if(is_array($result)){				
+				return json_encode($result);
+			}else{
+				return urlencode($result);
 			}
-			else{
-				$resultArr=array("isLogon"=>"false");
-				$result=json_encode($resultArr);
-			}
-			
-			return $result;
 		}
 		
 		/**
@@ -93,8 +87,10 @@
 				$logonUser=$this->user->getLogonUsername();
 			}
 			$resultArr=array("logonUser"=>$logonUser,"replys"=>$this->user->getReplysForComment($commentId));
-			$result=json_encode($resultArr);
-			return $result;
+			if(is_array($result)){
+				return json_encode($result);
+			}
+			return urlencode($result);
 		}
 		
 		/**
@@ -105,17 +101,11 @@
 			$fatherReplyId=$_REQUEST['fatherReplyId']??"";
 			$content=$_REQUEST['content']??"";
 			$result="";
-			if($this->user->isUserLogon()){
-				//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
-				$result=$this->user->createReplyForComment($fatherReplyId,$commentId, $content);
-				$result["isLogon"]="true";
-				$result=json_encode($result);
+			$result=$this->user->createReplyForComment($fatherReplyId,$commentId, $content);
+			if(is_array($result)){
+				return json_encode($result);
 			}
-			else{
-				$result=array("isLogon"=>"false");
-				$result=json_encode($result);
-			}			
-			return $result;
+			return urlencode($result);
 		}
 		/**
 		 * 回复一条回复
@@ -125,17 +115,14 @@
 			$fatherReplyId=$_REQUEST['fatherReplyId'];
 			$content=$_REQUEST['content'];
 			$result="";
-			if($this->user->isUserLogon()){
-				//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
-				$result=$this->user->createReplyForReply($fatherReplyId,$commentId, $content);
-				$result["isLogon"]="true";
-				$result=json_encode($result);
-			}
-			else{
-				$result=array("isLogon"=>"false");
-				$result=json_encode($result);
-			}			
-			return $result;
+			//由于需要在回复评论之后加载出评论者和评论的内容，所以在下面获取评论者信息
+			$result=$this->user->createReplyForReply($fatherReplyId,$commentId, $content);
+			if(is_array($result)){
+				return json_encode($result);
+			}else{
+				return urlencode($result);
+			}		
+			
 		}
 		
 		/**
@@ -144,8 +131,10 @@
 		public function disableReplyForComment(){
 			$replyId=$_REQUEST['replyId'];
 			$result=array("disableRow"=>$this->user->disableReplyForComment($replyId));
-			$result=json_encode($result);
-			return $result;
+			if(is_array($result)){
+				return json_encode($result);
+			}
+			return urlencode($result);
 		}
 		
 		/**
@@ -154,8 +143,10 @@
 		public function disableReplyForReply(){
 			$replyId=$_REQUEST['replyId'];
 			$result=array("disableRow"=>$this->user->disableReplyForReply($replyId));
-			$result=json_encode($result);
-			return $result;
+			if(is_array($result)){
+				return json_encode($result);
+			}
+			return urlencode($result);
 		}
 		
 		/**

@@ -49,7 +49,11 @@ function loadKeyword(){
 
 function createNewTopic(){
 	var inputTopicType=$("#inputTopicType").val();
-	var inputTopicContent=$("#inputTopicContent").val();
+	var inputTopicContent=$.trim($("#inputTopicContent").val());
+	if(inputTopicContent.length<=0){
+		alert("话题不得为空");
+		return;
+	}
 	var topicDescription=$("#editor").html();
 	var token=$("#token").val();
 	$.post(
@@ -69,7 +73,7 @@ function createNewTopic(){
 					alert("话题添加失败，请检查是否话题标题重复了");
 				}
 			}else{
-				result=(decodeURI(result));
+				result=decodeURI(result);
 				var reg=/\"/g;
 				alert(result.replace(reg,''));
 			}
@@ -95,7 +99,7 @@ function getSelfTopicList(){
 			var topicList="";
 			result.topics.forEach(function(value,index){
 				topicList+="<tr>";
-				topicList+="<td>"+value.asker+"</td>";
+				// topicList+="<td>"+value.asker+"</td>";
 				topicList+="<td>"+value.askDate+"</td>";
 				topicList+="<td>"+value.topicType+"</td>";
 				topicList+="<td><a target='_blank' href='../forum/topicDetails.php?topicId="+value.topicId+"'>"+value.content+"</a></td>";
@@ -141,7 +145,7 @@ function searchTopicListByContentOrDescription(){
 			var topicList="";
 			result.topics.forEach(function(value,index){
 				topicList+="<tr>";
-				topicList+="<td>"+value.asker+"</td>";
+				// topicList+="<td>"+value.asker+"</td>";
 				topicList+="<td>"+value.askDate+"</td>";
 				topicList+="<td>"+value.topicType+"</td>";
 				topicList+="<td><a target='_blank' href='../forum/topicDetails.php?topicId="+value.topicId+"'>"+value.content+"</a></td>";

@@ -13,11 +13,11 @@ function changeSystemSettingInfo(){
 		var maxArticle=parseInt($.trim($("#inputMaxArticle").val()));
 		var maxComment=parseInt($.trim($("#inputMaxComment").val()));
 		var maxFindPassword=parseInt($.trim($("#inputMaxFindPwd").val()));
-		var maxVisitPerMinute=parseInt($.trim($("#inputMaxVisit").val()));
+		var maxEmailCount=parseInt($.trim($("#inputMaxEmailCount").val()));
 		$.ajax({
 			url:"../Controller/SystemSettingController.php",
 			data:{action:"changeSystemSettingInfo",maxQuestion:maxQuestion,maxTopic:maxTopic,maxArticle:maxArticle,
-				maxComment:maxComment,maxFindPassword:maxFindPassword,maxVisitPerMinute:maxVisitPerMinute},
+				maxComment:maxComment,maxFindPassword:maxFindPassword,maxEmailCount:maxEmailCount},
 			success:function(data){
 				var result=$.trim(data);
 				result=$.parseJSON(result);
@@ -48,11 +48,11 @@ function checkSettingInfo(){
 	var maxArticle=$.trim($("#inputMaxArticle").val());
 	var maxComment=$.trim($("#inputMaxComment").val());
 	var maxFindPassword=$.trim($("#inputMaxFindPwd").val());
-	var maxVisitPerMinute=$.trim($("#inputMaxVisit").val());
+	var maxEmailCount=$.trim($("#inputMaxEmailCount").val());
 	if($.isNumeric(maxQuestion) && $.isNumeric(maxTopic) && $.isNumeric(maxArticle)
-		 && $.isNumeric(maxComment) && $.isNumeric(maxFindPassword) && $.isNumeric(maxVisitPerMinute)
+		 && $.isNumeric(maxComment) && $.isNumeric(maxFindPassword) && $.isNumeric(maxEmailCount)
 		 && maxQuestion>=0 && maxTopic>=0 && maxArticle>=0 
-		 && maxComment>=0 && maxFindPassword>=0 && maxVisitPerMinute>=0){
+		 && maxComment>=0 && maxFindPassword>=0 && maxEmailCount>=0){
 		 	return true;
 	}
 	else{

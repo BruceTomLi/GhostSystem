@@ -58,7 +58,7 @@
 						<table class="table" id="topicsTable">		
 							<thead>
 								<tr>
-									<th>提问者</th>
+									<!--<th>提问者</th>-->
 									<th>提问日期</th>
 									<th>话题类型</th>
 									<th>话题内容</th>
@@ -68,9 +68,9 @@
 							</thead>
 							<tbody>
 								<tr>
-									<td>
+									<!--<td>
 										山外山
-									</td>
+									</td>-->
 									<td>
 										2018/7/9
 									</td>
@@ -118,18 +118,7 @@
 				</div>
 				
 			</div>			
-			
-			<!--<div class="row-fluid detailsDiv">
-				<div class="span12 mainContent">
-					<ul class="nav nav-tabs pull-right">
-						<li>
-							<button class="btn-link" id="returnListBtn">返回话题列表</button>
-						</li>
-					</ul>
-					<?php include(__DIR__."/../View/topicDetails.php"); ?>
-				</div>
-			</div>-->
-			
+				
 			
 			
 			<div class="row-fluid createDiv">

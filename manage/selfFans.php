@@ -33,14 +33,14 @@
 									<th>粉丝头像</th>
 									<th>粉丝称呼</th>
 									<th>粉丝性别</th>
-									<th>粉丝邮箱</th>
+									<!--<th>粉丝邮箱</th>-->
 									<th>一句话介绍</th>
 								</tr>							
 							</thead>
 							<tbody>
 								<tr>
 									<td>
-										<img src="../UploadImages/sheep.jpg">
+										<!--<img src="../UploadImages/sheep.jpg">-->
 									</td>
 									<td>
 										<a href="../forum/person.php?userId=11" target="_blank">王五</a> 
@@ -48,9 +48,9 @@
 									<td>
 										男 
 									</td>
-									<td>
+									<!--<td>
 										wangwu@123.com
-									</td>
+									</td>-->
 									<td>
 										我是一个程序员
 									</td>

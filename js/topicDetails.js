@@ -200,39 +200,47 @@ function cancelAddComment(obj){
  */
 function commentTopic(obj){
 	var topicId=$(obj).attr("value");
-	var content=$(obj).siblings("textarea").val();
+	var content=$.trim($(obj).siblings("textarea").val());
+	if(content.length<=0){
+		alert("评论内容不得为空");
+		return;
+	}
 	$.post(
 		"../Controller/TopicController.php",
 		{action:"commentTopic",topicId:topicId,content:content},
 		function(data){
 			var result=$.trim(data);
-			result=$.parseJSON(result);			
-			if(result.isLogon=="true" && result.affectRow==1){
-				alert("评论成功");
-				$(obj).siblings("textarea").val("");
-				$(obj).parent().hide();
-				//getTopicDetails();
-				//动态增加评论信息
-				var newComment="<li><ul><li>";
-				newComment+="<span><a target='_blank' href='../forum/person.php?userId="+result.createdComment[0].commenterId+"'>"+result.createdComment[0].commenter+"</a>：</span>";
-				
-				newComment+="<span>"+result.createdComment[0].content+"</span>";
-				newComment+="<button class='btn-link disableBtn' value='"+result.createdComment[0].commentId+"' onClick='disableCommentForTopic(this)'>删除</button>";
-				newComment+="<button class='btn-link replyBtn' value='"+result.createdComment[0].commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
-				newComment+="<div class='replysForComment'></div></li></ul></li>";
-				$("#topicAnswers>ul").append(newComment);
-				//动态增加评论数
-				var commentCount=parseInt($("#commentCount").text());
-				$("#commentCount").html(commentCount+1);
-				//动态隐藏评论框
-				$(obj).siblings("textarea").val("");
-				$(obj).parent().hide();
-			}
-			else if(result.isLogon=="false"){
-				alert("您没有登录，请在登录之后进行评论");
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);			
+				if(result.affectRow==1){
+					alert("评论成功");
+					$(obj).siblings("textarea").val("");
+					$(obj).parent().hide();
+					//getTopicDetails();
+					//动态增加评论信息
+					var newComment="<li><ul><li>";
+					newComment+="<span><a target='_blank' href='../forum/person.php?userId="+result.createdComment[0].commenterId+"'>"+result.createdComment[0].commenter+"</a>：</span>";
+					
+					newComment+="<span>"+result.createdComment[0].content+"</span>";
+					newComment+="<button class='btn-link disableBtn' value='"+result.createdComment[0].commentId+"' onClick='disableCommentForTopic(this)'>删除</button>";
+					newComment+="<button class='btn-link replyBtn' value='"+result.createdComment[0].commentId+"' onClick='showReplyCommentDiv(this)'>回复</button>";
+					newComment+="<div class='replysForComment'></div></li></ul></li>";
+					$("#topicAnswers>ul").append(newComment);
+					//动态增加评论数
+					var commentCount=parseInt($("#commentCount").text());
+					$("#commentCount").html(commentCount+1);
+					//动态隐藏评论框
+					$(obj).siblings("textarea").val("");
+					$(obj).parent().hide();
+				}else{
+					alert("评论失败");
+				}
 			}
 			else{
-				alert("发生了未知错误，请联系管理员");
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
 			}
 		}
 	);	
@@ -363,14 +371,18 @@ function showReplyReplyDiv(obj){
 function replyComment(obj){
 	var fatherReplyId=$(obj).attr("value");
 	var commentId=fatherReplyId;	
-	var content=$(obj).siblings("textarea").val();
+	var content=$.trim($(obj).siblings("textarea").val());
+	if(content.length<=0){
+		alert("回复内容不得为空");
+		return;
+	}
 	$.post(
 		"../Controller/TopicController.php",
 		{action:"replyComment",fatherReplyId:fatherReplyId,commentId:commentId,content:content},
 		function(data){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
-			if(result.isLogon=="true" && result.insertRow==1){
+			if(result.insertRow==1){
 				alert("回复成功");
 				//getTopicDetails();
 				var replyCommentBtn=$("button.replyBtn[value='"+commentId+"']");	
@@ -426,12 +438,6 @@ function replyComment(obj){
 				// //动态删除回复框
 				// $(obj).parent().remove();				
 			}
-			else if(result.isLogon=="false"){
-				alert("您没有登录，请在登录之后进行回复");
-			}
-			else{
-				alert("评论失败，发生未知错误，请联系管理员"+result.isLogon);
-			}
 		}
 	);
 }
@@ -451,7 +457,7 @@ function replyReply(obj){
 		function(data){
 			var result=$.trim(data);
 			result=$.parseJSON(result);
-			if(result.isLogon=="true" && result.insertRow==1){
+			if(result.insertRow==1){
 				alert("回复成功");
 				//getTopicDetails();
 				//getReplysForComment($("button.detailsBtn[value='"+commentId+"']"),"true");
@@ -491,12 +497,6 @@ function replyReply(obj){
 				//$(obj).parent().parent().after(replyContentHtml);
 				//动态删除回复框
 				//$(obj).parent().remove();	
-			}
-			else if(result.isLogon=="false"){
-				alert("您没有登录，请在登录之后进行回复");
-			}
-			else{
-				alert("评论失败，发生未知错误，请联系管理员"+result.isLogon);
 			}
 		}
 	);

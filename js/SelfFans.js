@@ -43,7 +43,7 @@ function loadUserFans(){
 				fansHtml+="<td><a href='../forum/person.php?userId="+value.userId+"' target='_blank'>"+value.username+"</a>";
 				var fansSex=value.sex==1?"男":"女";
 				fansHtml+="<td>"+fansSex+"</td>";
-				fansHtml+="<td>"+value.email+"</td>";
+				// fansHtml+="<td>"+value.email+"</td>";
 				fansHtml+="<td>"+value.oneWord+"</td>";
 				fansHtml+="</tr>";
 			});

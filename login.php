@@ -34,13 +34,12 @@
 							  </div>
 							  <div class="control-group">
 							    <div class="controls">
-							    	<!--暂时不开发找回密码功能，后面开发邮箱激活账号时一起开发邮箱找回密码功能-->
-							      	<!--<label class="checkbox">
-							        	<input type="checkbox"><span>记住我</span>&nbsp;&nbsp;
-							        	<a href="#">忘记密码</a>
-							      	</label>-->
-							      <br />
-							      <button type="submit" class="btn btn-success" id="loginBtn">登录</button>
+							        	<!--<input type="checkbox"><span>记住我</span>&nbsp;&nbsp;-->
+							        <p>
+							        	<a href="#" onclick="showFindPwdDialog()">忘记密码</a>&nbsp;&nbsp;
+							        	<a href="index.php">游客访问</a>
+							        </p>
+							      	<button type="submit" class="btn btn-success" id="loginBtn">登录</button>
 							    </div>
 							  </div>
 							</div>
@@ -62,9 +61,8 @@
 						</div>
 						<div class="row-fluid loginFooter">
 							<div class="span12">
-								<span>还没有账号？</span>&nbsp;
+								<span>还没有账号？</span>&nbsp;								
 								<a href="register.php">立即注册</a>&nbsp;
-								<a href="index.php">游客访问</a>&nbsp;
 								<a href="forum/question.php">回答阅读</a>&nbsp;
 							</div>
 						</div>
@@ -75,6 +73,22 @@
 				<div class="span12">
 					<?php include("View/loginRegisterFooter.php"); ?>
 				</div>
+			</div>
+			
+			<!--模态窗体，显示一个对话框-->
+			<div id="findPwdModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			 	<div class="modal-header">
+			    	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+			    	<h3 id="myModalLabel">找回密码</h3>
+			  	</div>
+			  	<div class="modal-body">
+			    	<p>请输入注册时使用的邮箱:</p>
+			    	<p><input type="text" id="inputEmail" /></p>			    	
+			 	</div>
+			  	<div class="modal-footer">
+			    	<button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
+			    	<button id="findPwdBtn" class="btn btn-primary" onclick="findPassword()">找回密码</button>
+			  	</div>
 			</div>
 		</div>
 	</body>

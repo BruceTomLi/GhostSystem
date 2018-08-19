@@ -58,7 +58,7 @@
 							<tbody>
 								<tr>
 									<td>
-										<img src="../img/wangsai.jpg">
+										<img src="../img/boy.gif">
 									</td>
 									<td>
 										<p><a href="questionDetails.php">Ghost 0.7.0 中文版正式发布</a></p>
@@ -66,12 +66,12 @@
 									</td>
 									<td>
 										<p>贡献</p>
-										<p><img src="../img/liuchenghua.jpg"></p>
+										<p><img src="../img/boy.gif"></p>
 									</td>
 								</tr>
 								<tr>
 									<td>
-										<img src="../img/wangsai.jpg">
+										<img src="../img/boy.gif">
 									</td>
 									<td>
 										<p><a href="questionDetails.php">Ghost 0.7.0 中文版正式发布</a></p>
@@ -79,12 +79,12 @@
 									</td>
 									<td>
 										<p>贡献</p>
-										<p><img src="../img/liuchenghua.jpg"></p>
+										<p><img src="../img/boy.gif"></p>
 									</td>
 								</tr>
 								<tr>
 									<td>
-										<img src="../img/wangsai.jpg">
+										<img src="../img/boy.gif">
 									</td>
 									<td>
 										<p><a href="questionDetails.php">Ghost 0.7.0 中文版正式发布</a></p>
@@ -92,12 +92,12 @@
 									</td>
 									<td>
 										<p>贡献</p>
-										<p><img src="../img/liuchenghua.jpg"></p>
+										<p><img src="../img/boy.gif"></p>
 									</td>
 								</tr>
 								<tr>
 									<td>
-										<img src="../img/wangsai.jpg">
+										<img src="../img/boy.gif">
 									</td>
 									<td>
 										<p><a href="questionDetails.php">Ghost 0.7.0 中文版正式发布</a></p>
@@ -105,7 +105,7 @@
 									</td>
 									<td>
 										<p>贡献</p>
-										<p><img src="../img/liuchenghua.jpg"></p>
+										<p><img src="../img/boy.gif"></p>
 									</td>
 								</tr>
 							</tbody>
@@ -163,8 +163,7 @@
 							<li>
 								<button class="btn-link" id="returnListBtn">返回问题列表</button>
 							</li>
-						</ul>
-						<?php include(__DIR__."/../View/questionDetails.php"); ?>						
+						</ul>					
 					</div>
 					
 					<div class="span3">

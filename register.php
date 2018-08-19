@@ -96,9 +96,9 @@
 							      <label class="checkbox">
 							        <input type="checkbox" id="isAgree"> 我同意
 							        <button class="btn-link" onclick="showUserProtocol()">用户协议</button>
-							        <a href="login.php" style="margin-left:30px;">已有账号？</a>
-							      </label>
-							      <span id="agreeChk"></span>
+							        <span id="agreeChk"></span>
+							      </label>				     
+							      <a href="login.php">已有账号？</a> 
 							    </div>
 							  </div>
 							  <div class="control-group">
@@ -143,7 +143,7 @@
 			  	<div class="modal-body">
 			    	<p>当您申请用户时，表示您已经同意遵守本规章。</p>
 			    	
-						<p>欢迎您加入本站点参与交流和讨论，本站点为社区，为维护网上公共秩序和社会稳定，请您自觉遵守以下条款：</p>
+						<p>欢迎您加入本站点参与交流和讨论，本站点为博客知识分享平台，为维护网上公共秩序和社会稳定，请您自觉遵守以下条款：</p>
 					
 						<p>一、不得利用本站危害国家安全、泄露国家秘密，不得侵犯国家社会集体的和公民的合法权益，不得利用本站制作、复制和传播下列信息：</p>
 						　<p>（一）煽动抗拒、破坏宪法和法律、行政法规实施的；</p>
@@ -166,6 +166,12 @@
 			    	<button class="btn" data-dismiss="modal" aria-hidden="true">关闭</button>
 			    	<button class="btn btn-primary" data-dismiss="modal" aria-hidden="true">我知道了</button>
 			  	</div>
+			</div>
+			<!--模态窗体，显示一个对话框-->
+			<div id="doingRegisterModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+			  	<div class="modal-body">
+			    	<p>正在提交注册请求，请稍等...</p>
+			   </div>
 			</div>
 		</div>
 	</body>

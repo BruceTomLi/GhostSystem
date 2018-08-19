@@ -1,4 +1,5 @@
 <?php
+	require_once(__DIR__."/../classes/SessionDBC.php");
 	require_once(__DIR__."/../Model/User.php");
 	require_once("TestData.php");
 	use PHPUnit\Framework\TestCase;
@@ -37,15 +38,25 @@
 			$heading="img/test.jpg";
 			
 			//已经注册过一次的再注册一次会失败，因为用户名和邮箱重复了
-			$affectRow=$this->user->register($username, $password, $email, $sex, $job, $province, $city, $oneWord,$heading);
+			$result=$this->user->register($username, $password, $email, $sex, $job, $province, $city, $oneWord,$heading);
 			if($this->user->isUsernameRepeat($username) || $this->user->isEmailRepeat($email)){
-				$this->assertTrue($affectRow=="用户名或者邮箱重复，不能注册");
+				$this->assertTrue($result=="用户名或者邮箱重复，不能注册");
 			}
 			else{
-				$this->assertTrue(is_numeric($affectRow) && $affectRow==1);
-			}
-			
+				$this->assertTrue(is_array($result) && $result["newAccount"]==1);
+			}			
 		}
+		
+		/**
+		 * 测试激活用户的账号
+		 */
+		function testActiveAccount(){
+			$userId="9";//这是张三的账号
+			$password="582c1c164bee3323ed890b3093c0a439";
+			$result=$this->user->activeAccount($userId, $password);
+			$this->assertTrue(is_numeric($result) && $result>=0);
+		}
+		 
 		/**
 		 * 下面测试用户名是否重复，测试数据重复，结果为true
 		 */
@@ -466,7 +477,7 @@
 		 * 测试用户上传自己的头像
 		 */
 		function testUploadSelfHeading(){
-			$fileName="../UploadImages/skyy.jpg";
+			$fileName="../UploadImages/phpunitTest/flower.jpg";
 			$realName="heading.jpg";
 			$isUnitTest=true;
 			
@@ -759,7 +770,7 @@
 			$this->assertTrue($this->user->getMaxArticle()>0);
 			$this->assertTrue($this->user->getMaxComment()>0);
 			$this->assertTrue($this->user->getMaxFindPassword()>0);
-			$this->assertTrue($this->user->getMaxVisitPerMinute()>0);
+			$this->assertTrue($this->user->getMaxSendEmailCount()>0);
 		}
 		
 		/**
@@ -817,6 +828,54 @@
 			//这个测试不方便断言，可以直接查看文件夹中文件的变化
 			$this->assertTrue($result);
 		}
+		
+		/**
+		 * 测试判断邮箱是否存在，用于用户找回密码
+		 */
+		function testIsEmailExist(){
+			$email="wangwu@123.com";
+			$emailExist=$this->user->isEmailExist($email);
+			$this->assertTrue($emailExist);
+		}
+		
+		/**
+		 * 测试今日邮件总数是否超量
+		 */
+		function testIsSendEmailOverTimes(){
+			$emailOverTimes=$this->user->isSendEmailOverTimes();
+			$this->assertFalse($emailOverTimes);
+		}
+		
+		/**
+		 * 测试找回密码总数是否超过限制（一般只允许用户一天使用找回密码功能3,5次）
+		 */
+		function testIsFindPasswordOverTimes(){
+			$email="wangwu@123.com";
+			$pwdOverTimes=$this->user->isFindPasswordOverTimes($email);
+			$this->assertFalse($pwdOverTimes);
+		}
+		
+		/**
+		 * 测试找回密码
+		 */
+		function testFindPassword(){
+			$email="noexistemail@fuckemail.com";
+			$result=$this->user->findPassword($email);
+			//$this->assertTrue(is_numeric($result) && $result==1);//实际邮箱测试没有问题，为节约邮件资源，使用一个不存在的邮箱
+			$this->assertTrue(is_string($result) && $result=="该邮箱不存在");
+		}
+		
+		/**
+		 * 测试记录发送的邮件
+		 */
+		function testRecordEmail(){
+			$emailContent="亲爱的，我想你了";
+			$reciverEmail="13396097230@163.com";
+			$emailType="activeAccount";
+			$result=$this->user->recordEmail($emailContent, $reciverEmail, $emailType);
+			$this->assertTrue($result);
+		}
+		
 	}
 
 ?>

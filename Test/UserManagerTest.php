@@ -121,5 +121,14 @@
 			$count=$this->userManager->resetUserPassword($userId, $newPassword);
 			$this->assertTrue(is_numeric($count) && $count>=0);//已经修改过就不再修改了
 		}
+		
+		/**
+		 * 测试激活用户
+		 */
+		function testActiveUser(){
+			$userId="7";
+			$result=$this->userManager->activeUser($userId);
+			$this->assertTrue(is_numeric($result) && $result>=0);
+		}
 	}
 ?>

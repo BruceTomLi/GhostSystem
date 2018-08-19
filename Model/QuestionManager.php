@@ -39,7 +39,7 @@
 			global $pdo;
 			$paraArr=array(":questionId"=>$questionId);			
 			$sql="select * from tb_question where questionId=:questionId";
-			$result=$pdo->getQueryResult($sql,$paraArr);
+			$result=$pdo->getQueryResult($sql,$paraArr);			
 			return $result;
 		}
 		

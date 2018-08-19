@@ -22,8 +22,9 @@
 					$count=$this->user->createNewQuestion($questionType, $questionContent, $questionDescription);
 					if(is_numeric($count)){
 						$count=array("count"=>$count);
+						return json_encode($count);
 					}			
-					return json_encode($count);
+					return urlencode($count);
 				}else{
 					return json_encode(urlencode("问题内容长度超过上限（最多1K字）"));
 				}

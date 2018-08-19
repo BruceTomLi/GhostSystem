@@ -136,7 +136,11 @@ function cancelAddComment(obj){
  */
 function commentQuestion(obj){
 	var questionId=$(obj).attr("value");
-	var content=$(obj).siblings("textarea").val();
+	var content=$.trim($(obj).siblings("textarea").val());
+	if(content.length<=0){
+		alert("评论内容不得为空");
+		return;
+	}
 	$.post(
 		"../Controller/QuestionController.php",
 		{action:"commentQuestion",questionId:questionId,content:content},
@@ -306,7 +310,11 @@ function showReplyReplyDiv(obj){
 function replyComment(obj){
 	var fatherReplyId=$(obj).attr("value");
 	var commentId=fatherReplyId;	
-	var content=$(obj).siblings("textarea").val();
+	var content=$.trim($(obj).siblings("textarea").val());
+	if(content.length<=0){
+		alert("回复内容不得为空");
+		return;
+	}
 	$.post(
 		"../Controller/QuestionController.php",
 		{action:"replyComment",fatherReplyId:fatherReplyId,commentId:commentId,content:content},
@@ -365,7 +373,11 @@ function replyComment(obj){
 function replyReply(obj){
 	var fatherReplyId=$(obj).attr("value");
 	var commentId=$(obj).parent().siblings(".commentIdForReplys").attr("value");	
-	var content=$(obj).siblings("textarea").val();
+	var content=$.trim($(obj).siblings("textarea").val());
+	if(content.length<=0){
+		alert("回复内容不得为空");
+		return;
+	}
 	$.post(
 		"../Controller/QuestionController.php",
 		{action:"replyReply",fatherReplyId:fatherReplyId,commentId:commentId,content:content},
@@ -374,9 +386,8 @@ function replyReply(obj){
 			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
 			if(pattern.test(result)){
 				result=$.parseJSON(result);
-				if(result.isLogon=="true" && result.insertRow==1){
+				if(result.insertRow==1){
 					alert("回复成功");
-					
 					var replyCommentBtn=$("button.replyBtn[value='"+commentId+"']");	
 					var details=$("button.detailsBtn[value='"+commentId+"']");	
 					var liCount=parseInt(details.text())+1;
@@ -393,8 +404,9 @@ function replyReply(obj){
 					replyCommentBtn.siblings(".replysForComment").append(replyContentHtml);
 					//动态删除回复框
 					$(obj).parent().remove();					
-				}
-				alert("回复失败");
+				}else{
+					alert("回复失败");
+				}				
 			}
 			else{
 				result=(decodeURI(result));

@@ -1,5 +1,6 @@
 <?php
 	require_once("SafeForXss.php");
+	require_once(__DIR__."/../Config/config.php");
 	class MysqlPdo{
 		private $pdo=null;
 		/**
@@ -11,10 +12,16 @@
 		
 		function initPdo(){
 			try{
-				$this->pdo=new PDO('mysql:dbname=db_ghost;host=localhost','root','root');
+				global $dbName;
+				global $dbIp;
+				global $dbUser;
+				global $dbPwd;
+				$this->pdo=new PDO("mysql:dbname={$dbName};host={$dbIp}",$dbUser,$dbPwd);
+				$this->pdo->query("SET NAMES utf8");
 			}
 			catch(Exception $e){
-				echo "<p>An Error occured:".$e->getMessage()."</p>";
+				// echo "<p>An Error occured:".$e->getMessage()."</p>";
+				return "<p>An Error occured!</p>";
 			}
 		}
 		/**
@@ -91,12 +98,10 @@
 			foreach ($paraArr as $key => &$value){
 				//不能对session表中的字段转义，否则会出错
 				if(($key!=":id" && $key!=":data")){
-					//对富文本框内容用SafeForXss类进行编码，可以显示超链接和图片
-					if($key==":articleContent" || $key==":topicDescription" 
-						|| $key==":questionDescription" || $key==":noticeContent"){
-						$value=SafeForXss::string_remove_xss(trim($value));
-					}
-					else{//对非富文本内容用htmlspecialchars进行完全转义编码，不显示任何html元素
+					//对富文本框内容不用进行编码，因为它自身已经进行了编码
+					if($key!=":articleContent" && $key!=":topicDescription"
+						&& $key!=":questionDescription" && $key!=":noticeContent"){
+						//对非富文本内容用htmlspecialchars进行完全转义编码，不显示任何html元素
 						$value=htmlspecialchars(trim($value));
 					}
 				}

@@ -10,7 +10,7 @@
 	define("Password","ww@123");
 	define("UserEmail","wangwu@123.com");
 	define("RepeatName","tomtom");
-	define("RepeatEmail","fasdfa@qq.com");
+	define("RepeatEmail","1402343@qq.com");
 	define("Province","湖北省");
 	define("QuestionType","电脑网络");
 	define("QuestionContent","这是单元测试里面用来测试创建一个新的问题的测试内容");

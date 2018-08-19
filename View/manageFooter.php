@@ -1,6 +1,6 @@
 <div class="footerP" id="manageFooterDetails">
 	<p>
-		Copyright © 0与1网 | 鄂ICP备00000000号, All Rights Reserved
+		Copyright © 零一知享 | 鄂ICP备00000000号, All Rights Reserved
 	</p>
 	
 	<link rel="stylesheet" type="text/css" href="../css/questionFooter.css" />

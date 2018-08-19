@@ -1,4 +1,7 @@
 <?php
+/**
+ * 富文本编辑器本身有编码功能，所以下面这个类实际上用不到，仅只用于学习
+ */
 class SafeForXss{
 	//------------------------------php防注入和XSS攻击通用过滤-----Start--------------------------------------------//
 	public static function string_remove_xss($html) {
@@ -16,10 +19,10 @@ class SafeForXss{
 	            $searchs[] = "&lt;".$value."&gt;";
 	 
 	            $value = str_replace('&amp;', '_uch_tmp_str_', $value);
-	            $value = self::string_htmlspecialchars($value);
+	            $value = self::string_htmlspecialchars($value,ENT_HTML5);
 	            $value = str_replace('_uch_tmp_str_', '&amp;', $value);
 	 
-	            $value = str_replace(array('\\', '/*'), array('.', '/.'), $value);
+	            // $value = str_replace(array('\\', '/*'), array('.', '/.'), $value);//不明白为什么要替换
 	            $skipkeys = array('onabort','onactivate','onafterprint','onafterupdate','onbeforeactivate','onbeforecopy','onbeforecut','onbeforedeactivate',
 	                    'onbeforeeditfocus','onbeforepaste','onbeforeprint','onbeforeunload','onbeforeupdate','onblur','onbounce','oncellchange','onchange',
 	                    'onclick','oncontextmenu','oncontrolselect','oncopy','oncut','ondataavailable','ondatasetchanged','ondatasetcomplete','ondblclick',
@@ -29,8 +32,9 @@ class SafeForXss{
 	                    'onmove','onmoveend','onmovestart','onpaste','onpropertychange','onreadystatechange','onreset','onresize','onresizeend','onresizestart',
 	                    'onrowenter','onrowexit','onrowsdelete','onrowsinserted','onscroll','onselect','onselectionchange','onselectstart','onstart','onstop',
 	                    'onsubmit','onunload','javascript','script','eval','behaviour','expression','style','class');
-	            $skipstr = implode('|', $skipkeys);
-	            $value = preg_replace(array("/($skipstr)/i"), '.', $value);
+	            $skipstr = implode('|', $skipkeys);//转化成可以被正则表达式利用的字符串
+	            $value = preg_replace(array("/($skipstr)/i"), '.', $value);//将符合上述字符的字符替换为.号
+	            //如果没有找到和allowtags相符合的字符串，就将value设为空
 	            if (!preg_match("/^[\/|\s]?($allowtags)(\s+|$)/is", $value)) {
 	                $value = '';
 	            }
@@ -71,6 +75,24 @@ class SafeForXss{
 	}
 	
 	//------------------php防注入和XSS攻击通用过滤-----End--------------------------------------------//
+	
+	/**
+	 * 上述逻辑看上去比较复杂，而且会将一些特殊字符转化为空白字符，不符合项目的实际需要
+	 * 需要在文章中使用源代码时，无法显示源码，所以我还是自己写代码实现相关逻辑
+	 * 先全部替换为htmlspecialchars的编码，然后将符合要求的元素标记还原成原来的编码
+	 */
+	public static function onlyCodeXss($html){
+		$html=htmlspecialchars($html);
+		$allowtags = 'img|a|font|div|table|tbody|caption|tr|td|th|br|p|b|strong|i|u|em|span|ol|ul|li|blockquote';
+		$tagsArr=explode("|", $allowtags);
+		foreach($tagsArr as $tag){
+			$pattern="/(&lt;$tag&gt;)/i";
+			preg_replace($pattern,"<$tag>",$html);
+			$pattern="/(&lt;$tag\/&gt;)/i";
+			preg_replace($pattern,"<$tag/>",$html);
+		}		
+		return $html;
+	} 
 	
 }
 

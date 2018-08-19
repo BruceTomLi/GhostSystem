@@ -1,8 +1,9 @@
 <?php
-	require_once(__DIR__.'/../classes/MysqlPdo.php');
-	require_once("ConstData.php");
+	require_once("ConstData.php");	
 	require_once(__DIR__.'/../classes/SessionDBC.php');
-	require_once(__DIR__.'/../classes/ImgCompress.php');
+	require_once(__DIR__."/../Config/config.php");
+	require_once(__DIR__.'/../classes/MysqlPdo.php');	
+	require_once(__DIR__.'/../classes/ImgCompress.php');	
 	class User{
 		// 下面的属性在程序中都用不到，我先注释起来
 		// private $id;
@@ -28,14 +29,25 @@
 			if($this->chkRegisterInfo($username, $password, $email)){
 				global $pdo;
 				if(!$this->isUsernameRepeat($username) && !$this->isEmailRepeat($email)){
+					$username=trim($username);
+					$email=trim($email);
+					$password=trim($password);
+					//向数据库中写入用户数据
 					$password=md5($password);
 					$userId=uniqid('',true);
 					$paraArr=array(':userId'=>$userId,':username'=>$username,':password'=>$password,':email'=>$email,
-						':sex'=>$sex,':job'=>$job,':province'=>$province,':city'=>$city,':oneWord'=>$oneWord,':heading'=>$heading,':enable'=>"1");
-					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading,:enable);";
+						':sex'=>$sex,':job'=>$job,':province'=>$province,':city'=>$city,':oneWord'=>$oneWord,':heading'=>$heading,':enable'=>"1",':active'=>"0");
+					$sql="insert into tb_user values(:userId,:username,:password,:email,:sex,:job,:province,:city,:oneWord,:heading,:enable,:active);";
 					$sql.="insert into tb_userrole values(:userId,(select roleId from tb_role where name='普通用户'));";
 					$affectRow=$pdo->getUIDResult($sql,$paraArr);
-					return $affectRow;
+					
+					//给用户发送激活账号的邮件
+					$url=BASE_URL.'activation.php';
+					$url.='?id='.$userId.'&code='.$password;//此时密码已经通过md5加密
+					$message="亲爱的用户，你注册成功了。  {$url}  请访问该地址，激活您的用户!";
+					$mailOk=mail($email, "零一知享-激活用户账号",$message)==true?"yes":"no";
+					$result=array("newAccount"=>$affectRow,"mailOk"=>$mailOk);
+					return $result;
 				}
 				else{
 					return "用户名或者邮箱重复，不能注册";
@@ -45,6 +57,17 @@
 				return "注册失败，用户名、密码或者邮箱校验失败";
 			}
 			
+		}
+
+		/**
+		 * 激活用户
+		 */
+		function activeAccount($userId,$password){
+			global $pdo;
+			$paraArr=array(":userId"=>$userId,":password"=>$password);
+			$sql="update tb_user set active=1 where userId=:userId and password=:password";
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
 		}
 		/**
 		 * 下面的函数用来检测用户填写的注册信息，在执行注册函数时，应该先检测用户传给服务器的信息是否合法
@@ -71,6 +94,7 @@
 		 */
 		function isUsernameRepeat($username){
 			global $pdo;
+			$username=trim($username);
 			$paraArr=array(":username"=>$username);
 			$sql="select count(*) as userCount from tb_user where username=:username";
 			$result=$pdo->getOneFiled($sql, "userCount",$paraArr);
@@ -86,6 +110,7 @@
 		 */
 		function isEmailRepeat($email){
 			global $pdo;
+			$email=trim($email);
 			$paraArr=array(":email"=>$email);
 			$sql="select count(*) as emailCount from tb_user where email=:email";
 			$result=$pdo->getOneFiled($sql, "emailCount",$paraArr);
@@ -104,15 +129,21 @@
 			$password=md5($password);
 			global $pdo;
 			$paraArr=array(":password"=>$password,":emailOrUsername"=>$emailOrUsername);
-			$sql="select username from tb_user where password=:password and (email=:emailOrUsername or username=:emailOrUsername) and enable=1;";
-			$result=$pdo->getOneFiled($sql, 'username',$paraArr);
-			if(!empty($result)){
-				$_SESSION['username']=$result;
+			$sql="select username,active,enable from tb_user where password=:password and (email=:emailOrUsername or username=:emailOrUsername)";
+			$result=$pdo->getQueryResult($sql,$paraArr);
+			if(is_array($result) && count($result)>0){
+				if($result[0]["active"]==0){
+					return "用户还未激活";
+				}
+				if($result[0]["enable"]==0){
+					return "用户已被禁用";
+				}
+				$_SESSION['username']=$result[0]['username'];
 				session_write_close();//执行这个函数，php会马上执行session的“写入”和“关闭”函数
 				return "success";
 			}				
 			else{
-				return "用户名不存在或者已经被禁用";
+				return "用户名或密码错误";
 			}			
 		}
 		/**
@@ -160,7 +191,7 @@
 					return "问题重复了";
 				}
 			}else{
-				return urlencode("今日提问数量已经达到上限");
+				return "今日提问数量已经达到上限";
 			}			
 		}
 		
@@ -208,8 +239,9 @@
 		 * 下面的函数测试用户的登出功能
 		 */
 		function logout(){					
-			if(!empty($_SESSION['username'])){
-				@session_start();//这里使用@是因为在session_start()函数前面如果有其他输出，就会报警告
+			if(isset($_SESSION['username'])){
+				//这里使用@是因为在session_start()函数前面如果有其他输出，就会报警告，主要是为phpunit设置的
+				@session_start();
 				session_destroy();
 				return true;
 			}
@@ -401,7 +433,7 @@
 				
 				return $resultArr;
 			}else{
-				return urlencode("今日评论和回复数量已经达到上限");//如果这里不编码，在浏览器中显示就是16进制编码了	
+				return "今日评论和回复数量已经达到上限";//如果这里不编码，在浏览器中显示就是16进制编码了	
 			}			
 		}
 		
@@ -499,7 +531,7 @@
 				return $resultArr;
 			}
 			else{
-				return urlencode("今日评论和回复数量已经达到上限");
+				return "今日评论和回复数量已经达到上限";
 			}
 			
 		}
@@ -527,7 +559,7 @@
 				return $resultArr;
 			}
 			else{
-				return urlencode("今日评论和回复数量已经达到上限");
+				return "今日评论和回复数量已经达到上限";
 			}
 		}
 		
@@ -1063,7 +1095,7 @@
 					return "话题重复了";
 				}
 			}else{
-				return urlencode("今日创建话题数量已经达到上限");
+				return "今日创建话题数量已经达到上限";
 			}					
 		}
 		
@@ -1458,13 +1490,13 @@
 			return $maxFindPassword;
 		}	
 		/**
-		 * 用户最大访问次数/分钟
+		 * 每日系统邮件总量
 		 */	
-		function getMaxVisitPerMinute(){
+		function getMaxSendEmailCount(){
 			global $pdo;
-			$sql="select theValue from tb_systemsetting where theKey='用户最大访问次数/分钟'";
-			$maxVisitPerMinute=$pdo->getOneFiled($sql, "theValue");
-			return $maxVisitPerMinute;
+			$sql="select theValue from tb_systemsetting where theKey='每日系统邮件总量'";
+			$maxSendEmailCount=$pdo->getOneFiled($sql, "theValue");
+			return $maxSendEmailCount;
 		}		
 		
 		/**
@@ -1550,8 +1582,90 @@
 				}
 			}else{
 				return "directory not exist";
+			}			
+		}
+		
+		/**
+		 * 找回密码
+		 */
+		function findPassword($email){
+			$email=trim($email);
+			if($this->isEmailExist($email)){
+				if(!$this->isSendEmailOverTimes()){
+					if(!$this->isFindPasswordOverTimes($email)){
+						//产生一个随机数作为密码
+						$randomPwd=mt_rand(100000, 999999);
+						//发送邮件通知用户新密码
+						$emailContent= "亲爱的用户，你的新密码是".$randomPwd."，请尽快登录系统修改密码";
+						$mailOk=mail($email,"零一知享-找回密码", $emailContent);
+						if($mailOk){							
+							global $pdo;
+							//记录发送的邮件							
+							$this->recordEmail($emailContent, $email, "findPassword");
+							//更新数据库中的密码
+							$password=md5($randomPwd);
+							$paraArr=array(":password"=>$password,":email"=>$email);
+							$sql="update tb_user set password=:password where email=:email";
+							$count=$pdo->getUIDResult($sql,$paraArr);
+							return $count;
+						}else{
+							return "我们试图给你的邮箱发送密码，但是失败了，请联系管理员找回密码";
+						}
+						
+					}else{
+						return "今日找回密码此处已经达到上限，如果你没有收到邮件，请与网站管理员联系";
+					}
+				}else{
+					return "今日系统邮件数已经用完，请明日再试";
+				}
+			}else{
+				return "该邮箱不存在";
 			}
-			
+		}
+		
+		/**
+		 * 记录系统发送的邮件
+		 */
+		function recordEmail($emailContent,$reciverEmail,$emailType){
+			global $pdo;
+			$emailId=uniqid("",true);
+			$sendTime=date("Y-m-d H:i:s");
+			$paraArr=array(":emailId"=>$emailId,":sendTime"=>$sendTime,":emailContent"=>$emailContent,":reciverEmail"=>$reciverEmail,":emailType"=>$emailType);
+			$sql="insert into tb_email values(:emailId,:sendTime,:emailContent,(select userId from tb_user where email=:reciverEmail),:emailType)";
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result==1?true:false;
+		}
+		
+		/**
+		 * 邮箱是否存在
+		 */
+		function isEmailExist($email){
+			global $pdo;
+			$paraArr=array(":email"=>$email);
+			$sql="select count(*) as emailCount from tb_user where email=:email";
+			$count=$pdo->getOneFiled($sql, "emailCount", $paraArr);
+			return $count>0?true:false;
+		}
+		
+		/**
+		 * 今日发邮件次数是否达到上限
+		 */
+		function isSendEmailOverTimes(){
+			global $pdo;
+			$sql="call pro_isSendEmailOverTimes()";
+			$emailOverTimes=$pdo->getOneFiled($sql, "emailOverTimes");
+			return $emailOverTimes=="yes"?true:false;
+		}
+		
+		/**
+		 * 今日找回密码次数是否达到上限
+		 */
+		function isFindPasswordOverTimes($email){
+			global $pdo;
+			$paraArr=array(":email"=>$email);
+			$sql="call pro_isFindPasswordOverTimes(:email)";
+			$pwdOverTimes=$pdo->getOneFiled($sql, "pwdOverTimes", $paraArr);
+			return $pwdOverTimes=="yes"?true:false;
 		}
 	}
 ?>

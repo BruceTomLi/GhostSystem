@@ -54,7 +54,11 @@ function loadKeyword(){
 
 function createNewQuestion(){
 	var inputQuestionType=$("#inputQuestionType").val();
-	var inputQuestionContent=$("#inputQuestionContent").val();
+	var inputQuestionContent=$.trim($("#inputQuestionContent").val());
+	if(inputQuestionContent.length<=0){
+		alert("问题不得为空");
+		return;
+	}
 	var questionDescription=$("#editor").html();
 	var token=$("#token").val();
 	$.post(
@@ -100,7 +104,7 @@ function getSelfQuestionList(){
 			var questionList="";
 			result.questions.forEach(function(value,index){
 				questionList+="<tr>";
-				questionList+="<td>"+value.asker+"</td>";
+				// questionList+="<td>"+value.asker+"</td>";
 				questionList+="<td>"+value.askDate+"</td>";
 				questionList+="<td>"+value.questionType+"</td>";
 				questionList+="<td><a target='_blank' href='../forum/questionDetails.php?questionId="+value.questionId+"'>"+value.content+"</a></td>";
@@ -146,7 +150,7 @@ function searchQuestionListByContentOrDescription(){
 			var questionList="";
 			result.questions.forEach(function(value,index){
 				questionList+="<tr>";
-				questionList+="<td>"+value.asker+"</td>";
+				// questionList+="<td>"+value.asker+"</td>";
 				questionList+="<td>"+value.askDate+"</td>";
 				questionList+="<td>"+value.questionType+"</td>";
 				questionList+="<td><a target='_blank' href='../forum/questionDetails.php?questionId="+value.questionId+"'>"+value.content+"</a></td>";

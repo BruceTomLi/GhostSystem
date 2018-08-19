@@ -72,7 +72,11 @@ function showCreate(){
  */
 function writeArticle(){
 	var title=$.trim($("#inputTitle").val());
-	var author=$("#inputAuthor").val();
+	if(title.length<=0){
+		alert("标题不得为空");
+		return;
+	}
+	var author=$("#inputAuthor").val();	
 	var label=$("#inputLabel").val();
 	var content=$("#editor").html();
 	var token=$("#token").val();

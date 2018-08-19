@@ -12,24 +12,35 @@
 		public function login(){
 			$password=$_POST['password']??null;
 			$emailOrUsername=$_POST['emailOrUsername']??null;
-			$isSuccess=$this->user->login($password, $emailOrUsername);
-			$loginInfo=array();
+			$result=$this->user->login($password, $emailOrUsername);
 			$visitUrl=$_SESSION['visitUrl']??"forum/question.php";
-			if($isSuccess=="success"){				
-				$loginInfo=array("isSuccess"=>$isSuccess,"visitUrl"=>$visitUrl);
-				$loginInfo=json_encode($loginInfo);
-				return $loginInfo;//登录成功的情况
+			if($result=="success"){				
+				$result=array("isSuccess"=>$result,"visitUrl"=>$visitUrl);
+				$result=json_encode($result);
+				return $result;//登录成功的情况
 			}		
 			else{
-				$loginInfo=array("isSuccess"=>"fail");
-				$loginInfo=json_encode($loginInfo);
-				return $loginInfo;//登录成功的情况
+				return urlencode($result);//登录失败的情况
 			}
+		}
+		
+		public function findPassword(){
+			$email=$_REQUEST['email']??"";
+			$count=$this->user->findPassword($email);
+			if(is_numeric($count)){
+				$resultArr=array("count"=>$count);
+				return json_encode($resultArr);
+			}else{
+				return urlencode($count);
+			}			
 		}
 		
 		public function selectAction(){
 			if(isset($_REQUEST['action']) && $_REQUEST['action']=="login"){
 				return $this->login();
+			}
+			if(isset($_REQUEST['action']) && $_REQUEST['action']=="findPassword"){
+				return $this->findPassword();
 			}
 		}
 	}

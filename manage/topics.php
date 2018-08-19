@@ -131,17 +131,7 @@
 				</div>
 				
 			</div>			
-			
-			<div class="row-fluid detailsDiv">
-				<div class="span12 mainContent">
-					<ul class="nav nav-tabs pull-right">
-						<li>
-							<button class="btn-link" id="returnListBtn">返回话题列表</button>
-						</li>
-					</ul>
-					<?php include(__DIR__."/../View/topicDetails.php"); ?>
-				</div>
-			</div>			
+				
 			
 			<footer id="manageFooter">
 				<?php include(__DIR__."/../View/manageFooter.php"); ?>

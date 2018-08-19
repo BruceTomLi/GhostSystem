@@ -29,7 +29,7 @@
 				$maxArticle=$systemSetting['systemSetting'][0]['maxArticle'];
 				$maxComment=$systemSetting['systemSetting'][0]['maxComment'];
 				$maxFindPassword=$systemSetting['systemSetting'][0]['maxFindPassword'];
-				$maxVisitPerMinute=$systemSetting['systemSetting'][0]['maxVisitPerMinute'];
+				$maxEmailCount=$systemSetting['systemSetting'][0]['maxEmailCount'];
 			?>
 			<div class="row-fluid queryDiv">
 				<div class="span12 mainContent">
@@ -71,9 +71,9 @@
 							    </div>
 						  	</div>
 						  	<div class="control-group">
-						  		<label class="control-label" for="inputMaxVisit">用户最大访问次数/分钟</label>
+						  		<label class="control-label" for="inputMaxEmailCount">每日邮件总量</label>
 						    	<div class="controls">
-						      		<input type="text" id="inputMaxVisit" placeholder="用户最大访问次数/分钟" value="<?php echo $maxVisitPerMinute; ?>">
+						      		<input type="text" id="inputMaxEmailCount" placeholder="每日邮件总量" value="<?php echo $maxEmailCount; ?>">
 						    	</div>
 						  	</div>							
 						  						  	

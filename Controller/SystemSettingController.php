@@ -24,9 +24,9 @@
 			$maxArticle=$_REQUEST['maxArticle']??20;
 			$maxComment=$_REQUEST['maxComment']??100;
 			$maxFindPassword=$_REQUEST['maxFindPassword']??5;
-			$maxVisitPerMinute=$_REQUEST['maxVisitPerMinute']??100;
+			$maxEmailCount=$_REQUEST['maxEmailCount']??100;
 			$changeRow=$this->systemManager->changeSystemSettingInfo($maxQuestion,$maxTopic,$maxArticle,
-					$maxComment,$maxFindPassword,$maxVisitPerMinute);
+					$maxComment,$maxFindPassword,$maxEmailCount);
 			$resultArr=array("changeRow"=>$changeRow);
 			return json_encode($resultArr);
 		}

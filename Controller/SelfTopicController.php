@@ -21,13 +21,14 @@
 					$count=$this->user->createNewTopic($topicType, $topicContent, $topicDescription);
 					if(is_numeric($count)){
 						$count=array("count"=>$count);
+						return json_encode($count);
 					}
-					return json_encode($count);
+					return urlencode($count);
 				}else{
-					return json_encode(urlencode("话题内容长度超过上限（最多1K字）"));
+					return urlencode("话题内容长度超过上限（最多1K字）");
 				}
 			}else{
-				return json_encode(urlencode("该请求被认为是骇客CSRF攻击"));
+				return urlencode("该请求被认为是骇客CSRF攻击");
 			}
 		}
 		

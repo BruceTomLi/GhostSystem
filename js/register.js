@@ -303,7 +303,7 @@ function getProvinceList (){
 		success: function(data) {
 			data = $.trim(data);
 			data = $.parseJSON(data);
-			var provinceLists="<option value='empty'>--</option>";
+			var provinceLists="<option value=''>--</option>";
 			data.forEach(function(item,index) {
 				provinceLists += `<option value='${item.province}'>${item.province}</option>`;
 			});
@@ -323,7 +323,7 @@ function getCityList (){
 		success: function(data) {			
 			data = $.trim(data);
 			data = $.parseJSON(data);
-			var cityLists="<option value='empty'>--</option>";
+			var cityLists="<option value=''>--</option>";
 			data.forEach(function(item,index) {
 				cityLists += `<option value='${item.city}'>${item.city}</option>`;
 			});
@@ -345,22 +345,36 @@ function register(){
 	var city=$('#city').val();
 	var oneWord=$('#inputOneWord').val();
 	var heading='';
-	$.post(
-		'Controller/RegisterController.php',
-		{action:"register",username:username,email:email,password:password,sex:sex,
-			job:job,province:province,city:city,oneWord:oneWord,heading:heading},
-		function(data){
+	$.ajax({
+		url:'Controller/RegisterController.php',
+		type:"POST",
+		data:{action:"register",username:username,email:email,password:password,sex:sex,job:job,province:province,city:city,oneWord:oneWord,heading:heading},
+		beforeSend:function(){
+			$("#doingRegisterModal").modal("show");
+		},
+		success:function(data){
 			var result=$.trim(data);
-			result=$.parseJSON(result);
-			if(result.affectRow>=1){//需要同时插入用户信息和用户角色信息，所以影响的行数应该是2行
-				alert("注册成功,请登录");
-				location="login.php";
-			}
-			else{
-				alert("注册失败");
-			}
+			var pattern=new RegExp("\{([^\{]+)[\s\S]*(\})$","gi");//使用正则表达式检测结果是否为json格式，以{开头，以}结尾，中间任意字符
+			if(pattern.test(result)){
+				result=$.parseJSON(result);
+				if(result.newAccount==1 && result.mailOk=="yes"){//需要同时插入用户信息和用户角色信息，所以影响的行数应该是2行
+					alert("注册成功,请通过你的邮箱激活账号之后登录系统");
+					window.location.href="login.php";
+				}else if(result.newAccount==1 && result.mailOk=="no"){
+					alert("已经注册账号,但是未成功发送邮件，你可以联系管理员帮你激活账号");
+				}else{
+					alert("注册失败");
+				}
+			}else{
+				result=(decodeURI(result));
+				var reg=/\"/g;
+				alert(result.replace(reg,''));
+			}			
+		},
+		complete:function(){
+			$("#doingRegisterModal").modal("hide");
 		}
-	);
+	});
 }
 
 /**

@@ -71,13 +71,10 @@
 			return true;
 		}
 	}
-
-	/**
-	 * 设置用来处理用户session的函数
-	 */
+	 
 	session_set_save_handler('SessionDBC::open_session', 'SessionDBC::close_session', 
 			'SessionDBC::read_session', 'SessionDBC::write_session', 
 			'SessionDBC::destory_session', 'SessionDBC::clean_session');
 	
-	session_start(); 
+	session_start();
 ?>

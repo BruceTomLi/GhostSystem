@@ -22,10 +22,13 @@
 			$oneWord=$_POST['oneWord']??null;
 			$heading=$_POST['heading']??null;
 			
-			$affectRow=$this->user->register($username, $password, $email, $sex, $job,$province, $city, $oneWord,$heading);
-			$resultArr=array("affectRow"=>$affectRow);
-			$result=json_encode($resultArr);
-			return $result;
+			$resultArr=$this->user->register($username, $password, $email, $sex, $job,$province, $city, $oneWord,$heading);
+			if(is_array($resultArr)){
+				$result=json_encode($resultArr);
+				return $result;
+			}else{
+				return urlencode($resultArr);
+			}			
 		}
 		/**
 		 * 执行检测用户名是否重复操作，调用User类中的isUsernameRepeat方法

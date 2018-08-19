@@ -55,6 +55,12 @@
 									<ul>
 										<li>微信公众号：lytwxkf，欢迎关注</li>
 										<li>邮箱：1401717460@qq.com</li>
+										<li>
+											<a target="_blank" href="http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=guDw9_Hn4PD34efC5O367_Pr7qzh7e8" 
+												style="text-decoration:none;">
+												<img src="http://rescdn.qqmail.com/zh_CN/htmledition/images/function/qm_open/ico_mailme_01.png"/>
+											</a>
+										</li>
 									</ul>
 									
 									<hr />

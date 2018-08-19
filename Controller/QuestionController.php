@@ -156,12 +156,13 @@
 		 */
 		public function getReplysForComment(){
 			$commentId=$_REQUEST['commentId'];
-			$logonUser="";
-			if($this->user->isUserLogon()){
-				$logonUser=$this->user->getLogonUsername();
+			$logonUser=$this->user->getLogonUsername();
+			$replys=$this->user->getReplysForComment($commentId);
+			if(is_array($replys)){
+				$result=array("logonUser"=>$logonUser,"replys"=>$replys);
+				return json_encode($result);
 			}
-			$resultArr=array("logonUser"=>$logonUser,"replys"=>$this->user->getReplysForComment($commentId));
-			return json_encode($resultArr);
+			return urlencode($replys);
 		}
 		
 		/**

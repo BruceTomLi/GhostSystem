@@ -110,7 +110,17 @@
 		public function resetUserPassword(){
 			$userId=$_REQUEST['userId']??"";
 			$newPassword=trim($_REQUEST['newPassword']??"");
-			$count=($this->userManager->resetUserPassword($userId, $newPassword))??0;
+			$count=$this->userManager->resetUserPassword($userId, $newPassword)??0;
+			$resultArr=array("count"=>$count);
+			return json_encode($resultArr);
+		}
+
+		/**
+		 * 激活用户账号
+		 */
+		public function activeUser(){
+			$userId=$_REQUEST['userId']??"";
+			$count=$this->userManager->activeUser($userId)??0;
 			$resultArr=array("count"=>$count);
 			return json_encode($resultArr);
 		}
@@ -154,6 +164,9 @@
 						}
 						if(isset($_REQUEST['action']) && $_REQUEST['action']=="resetUserPassword"){
 							return $this->resetUserPassword();
+						}
+						if(isset($_REQUEST['action']) && $_REQUEST['action']=="activeUser"){
+							return $this->activeUser();
 						}
 					}
 					//否则返回无权限信息

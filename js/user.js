@@ -271,6 +271,7 @@ function searchUserByKeyword(){
 				}
 				usersHtml+="<td><button class='btn btn-info editBtn' value='"+value.userId+"' onclick='showEdit(this)'>改角色</button></td>";
 				usersHtml+="<td><button class='btn-link' value='"+value.userId+"' onclick='showResetPwdDiv(this)'>重置密码</button></td>";
+				usersHtml+="<td><button class='btn-link' value='"+value.userId+"' onclick='activeUser(this)'>激活</button></td>";
 				usersHtml+="</tr>";
 			});
 			$("#usersTable tbody").html(usersHtml);
@@ -312,6 +313,26 @@ function resetUserPwd(obj){
 			}
 		}
 	});
+}
+
+/**
+ * 激活用户的账号
+ */
+function activeUser(obj){
+	var userId=$(obj).attr("value");
+	$.get(
+		"../Controller/UserController.php",
+		{action:"activeUser",userId:userId},
+		function(data){
+			var result=$.trim(data);
+			result=$.parseJSON(result);
+			if(result.count==1){
+				alert("已经激活该用户");
+			}else{
+				alert("未激活用户，可能该用户已经是激活状态");
+			}
+		}
+	);
 }
 
 /**

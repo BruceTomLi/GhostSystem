@@ -211,5 +211,16 @@
 			$result=$pdo->getUIDResult($sql,$paraArr);
 			return $result;
 		}
+		
+		/**
+		 * 激活用户
+		 */
+		function activeUser($userId){
+			global $pdo;
+			$paraArr=array(":userId"=>$userId);
+			$sql="update tb_user set active=1 where userId=:userId";
+			$result=$pdo->getUIDResult($sql,$paraArr);
+			return $result;
+		}
 	}
 ?>

@@ -100,6 +100,7 @@
 								<th>禁用</th>
 								<th>改角色</th>
 								<th>重置密码</th>
+								<th>激活</th>
 							</tr>							
 						</thead>
 						<tbody>
@@ -141,6 +142,9 @@
 								</td>
 								<td>
 									<button class="btn-link">重置密码</button>
+								</td>
+								<td>
+									<button class="btn-link">激活</button>
 								</td>
 							</tr>
 							
